@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SoundMatch — Recomendador gratuito preciso</title>
+<title>SoundMatch — Recomendador preciso por continente</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -222,12 +222,12 @@
       </div>
 
       <div class="tip-box">
-        <b>Tip para que acierte más:</b> usá una banda lo más específica posible. “Soda Stereo” funciona mejor que “rock argentino”. Si el continente falla, dejá el modo en “Alta”.
+        <b>Tip para que acierte más:</b> usá una banda específica y dejá el modo en “Alta”. Si la banda es de una escena chica, el motor ahora amplía candidatos por sonido antes de validar continente.
       </div>
     </aside>
   </div>
 
-  <div class="powered">Datos via <a href="https://last.fm" target="_blank">Last.fm API</a> + <a href="https://musicbrainz.org" target="_blank">MusicBrainz</a> · SoundMatch gratuito</div>
+  <div class="powered">Datos via <a href="https://last.fm" target="_blank">Last.fm API</a> + <a href="https://musicbrainz.org" target="_blank">MusicBrainz</a> · SoundMatch gratuito · v5</div>
 </div>
 
 <script>
@@ -236,8 +236,8 @@
 const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026'; // demo key pública
 
 const STORAGE_KEYS = {
-  favorites: 'soundmatch:favorites:v4',
-  history: 'soundmatch:history:v4'
+  favorites: 'soundmatch:favorites:v5',
+  history: 'soundmatch:history:v5'
 };
 
 const CONTINENTS = [
@@ -254,7 +254,7 @@ const CONTINENTS = [
 // Tags amplios para buscar candidatos regionales. No prueban origen por sí solos.
 const CONTINENT_QUERY_TAGS = {
   latam: ['latin rock','rock en espanol','rock en español','latin pop','cumbia','bossa nova','samba','tango','salsa','reggaeton','mpb','musica brasileira','tropicalia','argentinian','brazilian','chilean','mexican','colombian','peruvian','uruguayan'],
-  europe: ['british','english','scottish','irish','french','german','swedish','norwegian','italian','spanish','dutch','icelandic','britpop','krautrock','european','eurovision'],
+  europe: ['british','english','scottish','irish','french','german','swedish','norwegian','danish','finnish','italian','spanish','portuguese','dutch','belgian','icelandic','polish','greek','european','britpop','krautrock','cold wave','post punk','shoegaze','neo-psychedelia','psych rock','psychedelic rock','space rock','garage rock','fuzz club'],
   northamerica: ['american','canadian','usa','united states','canada','new york','los angeles','nashville','chicago','seattle','country','blues'],
   africa: ['african','afrobeat','afropop','amapiano','kwaito','highlife','south african','nigerian','ghanaian','ethiopian','malian','senegalese'],
   asia: ['japanese','korean','chinese','thai','indonesian','filipino','indian','bollywood','j-pop','j-rock','k-pop','city pop','mandopop'],
@@ -284,6 +284,39 @@ const CONTINENT_COUNTRIES = {
   oceania: ['AS','AU','CK','FJ','PF','GU','KI','MH','FM','NR','NC','NZ','NU','NF','MP','PW','PG','PN','WS','SB','TK','TO','TV','VU','WF'],
   middleeast: ['AM','AZ','BH','CY','EG','GE','IR','IQ','IL','JO','KW','LB','OM','PS','QA','SA','SY','TR','AE','YE']
 };
+
+
+// Países / gentilicios para validar origen desde biografías públicas cuando MusicBrainz no trae ISO.
+// Esto ayuda con bandas chicas o de escenas específicas donde Last.fm no etiqueta el país.
+const COUNTRY_TEXT_HINTS = {
+  latam: ['argentina','argentinian','brazil','brasil','brazilian','chile','chilean','uruguay','uruguayan','paraguay','paraguayan','bolivia','bolivian','peru','peruvian','colombia','colombian','venezuela','venezuelan','mexico','mexican','cuba','cuban','puerto rico','puerto rican','costa rica','guatemala','ecuador','dominican republic'],
+  europe: ['italy','italian','venice','venezia','rome','milano','milan','england','english','britain','british','uk','united kingdom','london','scotland','scottish','ireland','irish','france','french','paris','germany','german','berlin','spain','spanish','madrid','barcelona','portugal','portuguese','netherlands','dutch','amsterdam','belgium','belgian','sweden','swedish','norway','norwegian','denmark','danish','finland','finnish','iceland','icelandic','poland','polish','greece','greek','austria','austrian','switzerland','swiss','czech republic','czechia','czech','ukraine','ukrainian','russia','russian'],
+  northamerica: ['united states','usa','u.s.a','american','canada','canadian','new york','los angeles','california','seattle','chicago','nashville'],
+  africa: ['south africa','south african','nigeria','nigerian','ghana','ghanaian','ethiopia','ethiopian','mali','malian','senegal','morocco','moroccan','algeria','egypt','egyptian','kenya','kenyan'],
+  asia: ['japan','japanese','tokyo','korea','korean','south korea','china','chinese','taiwan','taiwanese','india','indian','thailand','thai','indonesia','indonesian','philippines','filipino','singapore','vietnam','vietnamese'],
+  oceania: ['australia','australian','melbourne','sydney','new zealand','new zealander','kiwi'],
+  middleeast: ['turkey','turkish','iran','iranian','persian','israel','israeli','lebanon','lebanese','egypt','egyptian','syria','syrian','palestine','palestinian','iraq','iraqi','saudi arabia','arabic']
+};
+
+// Candidatos por escena para casos donde Last.fm no devuelve suficientes similares directos.
+// No son resultados forzados: entran al ranking y después se valida continente igual que el resto.
+const STYLE_EXPANSION_CANDIDATES = [
+  {
+    id: 'psych_shoegaze_garage',
+    matchTags: ['psychedelic rock','psychedelic','neo-psychedelia','psych rock','shoegaze','dream pop','space rock','garage rock','noise rock','fuzz','post-punk'],
+    artists: ['New Candys','The Underground Youth','The KVB','The Telescopes','Singapore Sling','Dead Skeletons','The Lucid Dream','The Oscillation','The Wands','The Limiñanas','Radar Men From The Moon','Goat','Mugstar','The Janitors','The Vacant Lots','A Place to Bury Strangers','The Black Angels','Spacemen 3','The Jesus and Mary Chain','The Velvet Underground']
+  },
+  {
+    id: 'post_punk_darkwave',
+    matchTags: ['post-punk','darkwave','cold wave','goth','gothic rock','minimal wave','industrial'],
+    artists: ['Molchat Doma','Lebanon Hanover','She Past Away','The KVB','Boy Harsher','Motorama','Soviet Soviet','Clan of Xymox','The Soft Moon','Drab Majesty']
+  },
+  {
+    id: 'indie_dream_pop',
+    matchTags: ['indie rock','indie pop','dream pop','jangle pop','alternative rock'],
+    artists: ['Beach Fossils','DIIV','Wild Nothing','Slowdive','Ride','Chapterhouse','Pale Saints','The Radio Dept.','Alvvays','Real Estate']
+  }
+];
 
 const PRECISION_MODES = [
   { id: 'strict', icon: '🎯', name: 'Alta', desc: 'Solo muestra artistas con país validado por MusicBrainz. Es la mejor opción para acertar el continente.' },
@@ -649,11 +682,66 @@ function countryMatchesContinent(countryCode, continentId) {
   return getContinentIdsForCountry(countryCode).includes(continentId);
 }
 
+
+function inferOriginFromBio(artistInfo, continentId = selectedContinent) {
+  if (continentId === 'all') return null;
+  const raw = [
+    artistInfo?.bio?.summary,
+    artistInfo?.bio?.content,
+    artistInfo?.name
+  ].filter(Boolean).join(' ');
+  const bio = normalizeText(raw);
+  if (!bio) return null;
+
+  const selectedHints = COUNTRY_TEXT_HINTS[continentId] || [];
+  const matched = selectedHints.find(term => textMatchesTerm(bio, term));
+  if (matched) {
+    return {
+      ok: true,
+      continent: continentId,
+      label: matched,
+      source: 'bio Last.fm',
+      confidence: 0.72,
+      strict: true
+    };
+  }
+
+  // Si la bio menciona explícitamente un país de otro continente, lo descartamos para no contaminar resultados.
+  for (const [otherContinent, hints] of Object.entries(COUNTRY_TEXT_HINTS)) {
+    if (otherContinent === continentId) continue;
+    const otherMatch = hints.find(term => textMatchesTerm(bio, term));
+    if (otherMatch) {
+      return {
+        ok: false,
+        continent: otherContinent,
+        label: otherMatch,
+        source: 'bio Last.fm',
+        confidence: 0,
+        strict: true
+      };
+    }
+  }
+  return null;
+}
+
+function getSceneExpansionCandidates(seedTags) {
+  const normalized = seedTags.map(normalizeText);
+  const hits = [];
+  for (const pack of STYLE_EXPANSION_CANDIDATES) {
+    const hasMatch = pack.matchTags.some(tag => normalized.some(seedTag => textMatchesTerm(seedTag, tag)));
+    if (hasMatch) hits.push(...pack.artists.map(name => ({ name, _scenePack: pack.id })));
+  }
+  return hits;
+}
+
 function getCountryFromMusicBrainzArtist(artist) {
   return artist?.country
     || artist?.area?.['iso-3166-1-codes']?.[0]
+    || artist?.area?.['iso-3166-1-code-list']?.[0]
     || artist?.['begin-area']?.['iso-3166-1-codes']?.[0]
+    || artist?.['begin-area']?.['iso-3166-1-code-list']?.[0]
     || artist?.['end-area']?.['iso-3166-1-codes']?.[0]
+    || artist?.['end-area']?.['iso-3166-1-code-list']?.[0]
     || null;
 }
 
@@ -732,10 +820,14 @@ async function getTopArtistsByTag(tag, limit = 28) {
 
 async function getOriginFromMusicBrainz(name, mbid = '') {
   try {
-    if (mbid) {
-      const lookupUrl = new URL(`https://musicbrainz.org/ws/2/artist/${encodeURIComponent(mbid)}`);
+    async function lookupByMbid(id) {
+      const lookupUrl = new URL(`https://musicbrainz.org/ws/2/artist/${encodeURIComponent(id)}`);
       lookupUrl.search = new URLSearchParams({ fmt: 'json', inc: 'aliases' });
-      const artist = await musicBrainz(lookupUrl);
+      return musicBrainz(lookupUrl);
+    }
+
+    if (mbid) {
+      const artist = await lookupByMbid(mbid);
       const country = getCountryFromMusicBrainzArtist(artist);
       if (country) {
         return { countryCode: country.toUpperCase(), label: artist?.area?.name || artist?.['begin-area']?.name || country.toUpperCase(), source: 'MusicBrainz', confidence: 0.97 };
@@ -744,12 +836,22 @@ async function getOriginFromMusicBrainz(name, mbid = '') {
 
     const cleanName = name.replace(/["\\]/g, ' ').trim();
     const searchUrl = new URL('https://musicbrainz.org/ws/2/artist/');
-    searchUrl.search = new URLSearchParams({ query: `artist:"${cleanName}"`, fmt: 'json', limit: '8' });
+    searchUrl.search = new URLSearchParams({ query: `artist:"${cleanName}"`, fmt: 'json', limit: '10' });
     const data = await musicBrainz(searchUrl);
     const chosen = chooseMusicBrainzArtist(data?.artists || [], name);
-    const country = getCountryFromMusicBrainzArtist(chosen);
+
+    let country = getCountryFromMusicBrainzArtist(chosen);
+    let label = chosen?.area?.name || chosen?.['begin-area']?.name || '';
+
+    // En muchos artistas chicos, el search no trae todo el detalle, pero el lookup por MBID sí.
+    if (!country && chosen?.id) {
+      const detailed = await lookupByMbid(chosen.id);
+      country = getCountryFromMusicBrainzArtist(detailed);
+      label = detailed?.area?.name || detailed?.['begin-area']?.name || label;
+    }
+
     if (country) {
-      return { countryCode: country.toUpperCase(), label: chosen?.area?.name || chosen?.['begin-area']?.name || country.toUpperCase(), source: 'MusicBrainz', confidence: 0.94 };
+      return { countryCode: country.toUpperCase(), label: label || country.toUpperCase(), source: 'MusicBrainz', confidence: 0.94 };
     }
   } catch (e) {
     console.warn('No se pudo validar origen en MusicBrainz:', name, e);
@@ -830,7 +932,11 @@ async function verifyContinentStrict(candidate, info, tags) {
     };
   }
 
-  // En precisión alta, si MusicBrainz no confirma país, se descarta.
+  // Segundo: biografía pública de Last.fm. Sirve mucho para bandas de escenas chicas.
+  const bioOrigin = inferOriginFromBio(info, selectedContinent);
+  if (bioOrigin) return bioOrigin;
+
+  // En precisión alta, si no hay país/origen claro, se descarta.
   if (precisionMode === 'strict') {
     return { ok: false, label: 'origen no confirmado', source: 'sin país confirmado', confidence: 0, strict: false };
   }
@@ -855,7 +961,7 @@ async function fetchSimilar() {
 
   for (const artist of artists) {
     const artistInfo = await getArtistInfo(artist);
-    const thisSeedTags = getArtistTags(artistInfo).filter(isUsefulSeedTag).slice(0, 18);
+    const thisSeedTags = getArtistTags(artistInfo).filter(isUsefulSeedTag).slice(0, 28);
     seedTags.push(...thisSeedTags);
     seedProfiles.push({ name: artistInfo?.name || artist, tags: thisSeedTags });
 
@@ -869,15 +975,22 @@ async function fetchSimilar() {
     });
   }
 
-  const cleanSeedTags = uniq(seedTags.map(normalizeText)).slice(0, 20);
+  const cleanSeedTags = uniq(seedTags.map(normalizeText)).slice(0, 28);
+
+  // Expansión por escena: arregla casos como Winona Riders → New Candys,
+  // donde Last.fm puede no devolver todos los similares directos.
+  getSceneExpansionCandidates(cleanSeedTags).forEach(a => {
+    addCandidate(candidateMap, a, { tagHit: true, tagName: a._scenePack });
+  });
+
   // Candidatos regionales y por sonido: sirven para ampliar la búsqueda, no para validar país.
   const queryTags = [];
   if (selectedContinent !== 'all') queryTags.push(...(CONTINENT_QUERY_TAGS[selectedContinent] || []));
-  queryTags.push(...cleanSeedTags.slice(0, 12));
+  queryTags.push(...cleanSeedTags.slice(0, 18));
 
-  const tagQueries = uniq(queryTags.map(normalizeText)).filter(Boolean).slice(0, 26);
+  const tagQueries = uniq(queryTags.map(normalizeText)).filter(Boolean).slice(0, 42);
   const taggedLists = await mapLimit(tagQueries, 4, async tag => {
-    const topArtists = await getTopArtistsByTag(tag, 28);
+    const topArtists = await getTopArtistsByTag(tag, 80);
     return topArtists.map(a => ({ ...a, _tagName: tag }));
   });
 
@@ -887,7 +1000,7 @@ async function fetchSimilar() {
 
   const rawCandidates = [...candidateMap.values()]
     .sort((a, b) => b.directSimilarity - a.directSimilarity || b.tagHits - a.tagHits || a.directRank - b.directRank)
-    .slice(0, 210);
+    .slice(0, 360);
 
   const evaluated = await mapLimit(rawCandidates, 6, async candidate => {
     try {
@@ -904,8 +1017,10 @@ async function fetchSimilar() {
       // Si no tiene ninguna señal musical real, lo descartamos antes de validar país.
       if (candidate.directSimilarity < 0.035 && candidate.tagHits < 2 && soundOverlap === 0) return null;
 
-      // Si tiene continente elegido pero no es similar directo, pedimos al menos alguna señal regional antes de gastar MusicBrainz.
-      if (selectedContinent !== 'all' && candidate.directSimilarity < 0.08 && !regionalTagSignal && !originTagSignal) return null;
+      // Antes exigíamos señal regional antes de validar país; eso dejaba afuera bandas europeas
+      // como New Candys si Last.fm no las etiquetaba como italianas. Ahora priorizamos señal sonora.
+      const hasStrongSoundSignal = candidate.directSimilarity >= 0.055 || soundOverlap >= 2 || candidate.tagHits >= 2;
+      if (selectedContinent !== 'all' && !hasStrongSoundSignal && !regionalTagSignal && !originTagSignal) return null;
 
       const listenerScore = Math.min(5, Math.log10(listeners + 1));
       const directScore = candidate.directSimilarity * 60;
@@ -936,7 +1051,7 @@ async function fetchSimilar() {
 
   const finalResults = [];
   let originChecks = 0;
-  const MAX_ORIGIN_CHECKS = selectedContinent === 'all' ? 0 : (precisionMode === 'strict' ? 46 : 34);
+  const MAX_ORIGIN_CHECKS = selectedContinent === 'all' ? 0 : (precisionMode === 'strict' ? 72 : 52);
 
   for (const item of prelim) {
     if (finalResults.length >= 10) break;
@@ -990,7 +1105,7 @@ async function fetchSimilar() {
   finalResults.sort((a, b) => b.match - a.match || b.listeners - a.listeners);
 
   if (!finalResults.length && selectedContinent !== 'all') {
-    throw new Error(`No encontré artistas suficientemente parecidos con origen confiable en ${getContinentName(selectedContinent)}. En precisión alta es preferible no mostrar resultados antes que traer artistas de otro continente.`);
+    throw new Error(`No encontré suficientes artistas parecidos con origen confiable en ${getContinentName(selectedContinent)}. En precisión alta es preferible no mostrar resultados antes que traer artistas de otro continente.`);
   }
 
   return finalResults.slice(0, 8);

@@ -1,84 +1,155 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundMatch — Recomendador gratuito</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0a0a0f; --accent: #c084fc; --accent2: #818cf8; --accent3: #34d399;
-    --text: #f1f0ff; --muted: #8b8aad; --border: rgba(192,132,252,0.15);
-    --card-bg: rgba(28,28,39,0.85);
+    --bg: #07070c;
+    --panel: rgba(24,24,36,0.82);
+    --panel-soft: rgba(255,255,255,0.045);
+    --accent: #c084fc;
+    --accent2: #818cf8;
+    --accent3: #34d399;
+    --warning: #fbbf24;
+    --danger: #fb7185;
+    --text: #f7f5ff;
+    --muted: #9a98b8;
+    --muted2: #716f91;
+    --border: rgba(192,132,252,0.17);
+    --border-strong: rgba(192,132,252,0.34);
+    --shadow: 0 24px 70px rgba(0,0,0,0.38);
   }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-  .bg-orbs { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-  .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.1; }
-  .orb1 { width: 400px; height: 400px; background: #c084fc; top: -80px; left: -80px; animation: f1 8s ease-in-out infinite; }
-  .orb2 { width: 350px; height: 350px; background: #818cf8; bottom: -60px; right: -60px; animation: f2 10s ease-in-out infinite; }
-  .orb3 { width: 250px; height: 250px; background: #34d399; top: 50%; left: 50%; animation: f3 12s ease-in-out infinite; }
-  @keyframes f1{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,15px)}}
-  @keyframes f2{0%,100%{transform:translate(0,0)}50%{transform:translate(-15px,20px)}}
-  @keyframes f3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-48%,-52%)}}
-  .app { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
-  header { text-align: center; margin-bottom: 2.5rem; }
-  .logo { font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -1px; margin-bottom: 0.4rem; }
-  .tagline { color: var(--muted); font-size: 0.9rem; }
-  .badge-free { display: inline-block; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); border-radius: 50px; padding: 0.2rem 0.8rem; font-size: 0.72rem; color: #6ee7b7; letter-spacing: 1px; text-transform: uppercase; margin-top: 0.5rem; }
-  .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; margin-bottom: 1.25rem; }
-  .panel-title { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(192,132,252,0.15), transparent 28rem),
+      radial-gradient(circle at bottom right, rgba(52,211,153,0.12), transparent 24rem),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .bg-orbs { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(88px); opacity: 0.13; }
+  .orb1 { width: 420px; height: 420px; background: #c084fc; top: -100px; left: -70px; animation: f1 8s ease-in-out infinite; }
+  .orb2 { width: 380px; height: 380px; background: #818cf8; bottom: -90px; right: -70px; animation: f2 10s ease-in-out infinite; }
+  .orb3 { width: 290px; height: 290px; background: #34d399; top: 45%; left: 58%; animation: f3 12s ease-in-out infinite; }
+  @keyframes f1{0%,100%{transform:translate(0,0)}50%{transform:translate(22px,18px)}}
+  @keyframes f2{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,22px)}}
+  @keyframes f3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-46%,-53%)}}
+  .app { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 2rem 1.1rem 4rem; }
+  header { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1.2rem; }
+  .logo { font-family: 'Syne', sans-serif; font-size: clamp(2.2rem, 5vw, 4.1rem); font-weight: 800; line-height: .95; background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -2px; }
+  .tagline { color: var(--muted); font-size: 0.98rem; margin-top: .45rem; max-width: 620px; }
+  .badge-free { display: inline-flex; align-items: center; gap: .45rem; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.32); border-radius: 999px; padding: 0.55rem 0.9rem; font-size: 0.74rem; color: #86efac; letter-spacing: .8px; text-transform: uppercase; white-space: nowrap; }
+  .hero { background: linear-gradient(135deg, rgba(192,132,252,0.11), rgba(129,140,248,0.08), rgba(52,211,153,0.06)); border: 1px solid var(--border); border-radius: 26px; box-shadow: var(--shadow); padding: 1rem; margin-bottom: 1.1rem; }
+  .hero-inner { display: grid; grid-template-columns: 1.3fr .7fr; gap: 1rem; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 22px; padding: 1.25rem; backdrop-filter: blur(16px); }
+  .panel-title { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 0.85rem; }
+  .panel-sub { color: var(--muted); font-size: .84rem; line-height: 1.45; margin-top: -.45rem; margin-bottom: .85rem; }
+  .main-grid { display: grid; grid-template-columns: 1fr 330px; gap: 1rem; align-items: start; }
+  .stack { display: grid; gap: 1rem; }
   .input-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-  .input-wrap { flex: 1; min-width: 180px; }
-  input[type="text"] { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
-  input[type="text"]:focus { border-color: var(--accent); }
-  input[type="text"]::placeholder { color: var(--muted); }
-  .btn-add { background: rgba(192,132,252,0.12); border: 1px solid rgba(192,132,252,0.3); border-radius: 10px; color: var(--accent); font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; padding: 0.75rem 1.2rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-  .btn-add:hover { background: rgba(192,132,252,0.22); }
-  .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
-  .tag { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.25); border-radius: 50px; padding: 0.3rem 0.75rem; font-size: 0.82rem; color: #a5b4fc; animation: popIn 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+  .input-wrap { flex: 1; min-width: 220px; position: relative; }
+  input[type="text"] { width: 100%; background: rgba(255,255,255,0.055); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.2s, box-shadow .2s, background .2s; }
+  input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(192,132,252,.09); background: rgba(255,255,255,0.075); }
+  input[type="text"]::placeholder { color: var(--muted2); }
+  button { font-family: 'DM Sans', sans-serif; }
+  .btn-add, .btn-secondary, .btn-small { background: rgba(192,132,252,0.12); border: 1px solid rgba(192,132,252,0.3); border-radius: 14px; color: #d8b4fe; font-size: 0.84rem; font-weight: 700; padding: 0.86rem 1rem; cursor: pointer; transition: transform 0.2s, background 0.2s, border-color .2s; white-space: nowrap; }
+  .btn-add:hover, .btn-secondary:hover, .btn-small:hover { background: rgba(192,132,252,0.22); transform: translateY(-1px); }
+  .btn-secondary { color: #a5b4fc; background: rgba(129,140,248,.10); border-color: rgba(129,140,248,.26); }
+  .btn-small { padding: .38rem .68rem; border-radius: 999px; font-size: .72rem; }
+  .btn-clear { background: rgba(251,113,133,.09); border-color: rgba(251,113,133,.22); color: #fda4af; }
+  .tags, .mini-list { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.85rem; }
+  .tag { display: inline-flex; align-items: center; gap: 0.38rem; background: rgba(129,140,248,0.13); border: 1px solid rgba(129,140,248,0.25); border-radius: 999px; padding: 0.36rem 0.75rem; font-size: 0.84rem; color: #c7d2fe; animation: popIn 0.2s cubic-bezier(0.34,1.56,0.64,1); }
   @keyframes popIn{from{transform:scale(0.7);opacity:0}to{transform:scale(1);opacity:1}}
-  .tag-remove { background: none; border: none; color: #6b7280; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1; transition: color 0.15s; }
+  .tag-remove { background: none; border: none; color: #8b8aad; cursor: pointer; font-size: 1.05rem; padding: 0; line-height: 1; transition: color 0.15s; }
   .tag-remove:hover { color: #f87171; }
-  .chip-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
-  .chip { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 50px; padding: 0.35rem 0.9rem; font-size: 0.8rem; color: var(--muted); cursor: pointer; transition: all 0.18s; user-select: none; }
-  .chip:hover { border-color: var(--accent2); color: #a5b4fc; }
-  .chip.active { background: rgba(129,140,248,0.15); border-color: rgba(129,140,248,0.4); color: #c7d2fe; }
-  .chip.mood-chip:hover { border-color: var(--accent3); color: #6ee7b7; }
-  .chip.mood-chip.active { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.35); color: #6ee7b7; }
-  .continent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.5rem; margin-top: 0.5rem; }
-  .cont-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.5rem; text-align: center; cursor: pointer; transition: all 0.2s; }
-  .cont-btn:hover { border-color: rgba(192,132,252,0.35); background: rgba(192,132,252,0.06); }
-  .cont-btn.active { background: rgba(192,132,252,0.12); border-color: rgba(192,132,252,0.45); }
-  .cont-flag { font-size: 1.5rem; display: block; margin-bottom: 0.25rem; }
-  .cont-name { font-size: 0.78rem; color: var(--muted); }
-  .cont-btn.active .cont-name { color: var(--accent); font-weight: 500; }
-  .section-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem; display: block; }
-  .btn-discover { width: 100%; margin-top: 1.25rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 13px; color: #fff; font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; padding: 1rem; cursor: pointer; transition: all 0.25s; }
-  .btn-discover:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(192,132,252,0.35); }
-  .btn-discover:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-  .loading { text-align: center; padding: 2.5rem; }
-  .wave { display: inline-flex; align-items: flex-end; gap: 3px; height: 28px; margin-bottom: 0.75rem; }
+  .continent-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.55rem; margin-top: 0.55rem; }
+  .cont-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 16px; padding: 0.82rem 0.55rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+  .cont-btn::after { content:''; position:absolute; inset:auto 12px 0; height:2px; border-radius:99px; background: linear-gradient(90deg, var(--accent), var(--accent3)); opacity:0; transition:.2s; }
+  .cont-btn:hover { border-color: rgba(192,132,252,0.42); background: rgba(192,132,252,0.07); transform: translateY(-1px); }
+  .cont-btn.active { background: rgba(192,132,252,0.14); border-color: rgba(192,132,252,0.55); }
+  .cont-btn.active::after { opacity:1; }
+  .cont-flag { font-size: 1.6rem; display: block; margin-bottom: 0.3rem; }
+  .cont-name { font-size: 0.8rem; color: var(--muted); }
+  .cont-btn.active .cont-name { color: #e9d5ff; font-weight: 700; }
+  .section-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.55rem; display: block; }
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.45rem; }
+  .chip { background: rgba(255,255,255,0.045); border: 1px solid var(--border); border-radius: 999px; padding: 0.42rem 0.9rem; font-size: 0.82rem; color: var(--muted); cursor: pointer; transition: all 0.18s; user-select: none; }
+  .chip:hover { border-color: var(--accent2); color: #c7d2fe; transform: translateY(-1px); }
+  .chip.active { background: rgba(129,140,248,0.17); border-color: rgba(129,140,248,0.48); color: #dbeafe; }
+  .btn-discover { width: 100%; margin-top: 1rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 18px; color: #fff; font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; padding: 1.08rem; cursor: pointer; transition: all 0.25s; box-shadow: 0 18px 40px rgba(129,140,248,.18); }
+  .btn-discover:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(192,132,252,0.35); }
+  .btn-discover:disabled { opacity: 0.56; cursor: not-allowed; transform: none; box-shadow: none; }
+  .quality-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; margin-top: .8rem; }
+  .quality { background: rgba(255,255,255,.045); border:1px solid var(--border); border-radius: 16px; padding: .8rem; }
+  .quality b { display:block; font-size:.86rem; color: var(--text); margin-bottom:.22rem; }
+  .quality span { color: var(--muted); font-size:.74rem; line-height:1.3; }
+  .aside-actions { display:flex; justify-content:space-between; align-items:center; gap:.5rem; margin-bottom:.5rem; }
+  .empty-note { color: var(--muted2); font-size: .82rem; line-height:1.45; padding: .55rem 0; }
+  .fav-chip, .history-chip { display:inline-flex; align-items:center; gap:.4rem; padding:.42rem .65rem; border-radius:999px; background:rgba(255,255,255,.045); border:1px solid var(--border); color:#dbeafe; font-size:.8rem; cursor:pointer; transition:.18s; }
+  .fav-chip:hover, .history-chip:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+  .history-chip { align-items:flex-start; border-radius:16px; width:100%; justify-content:space-between; text-align:left; }
+  .history-main { display:grid; gap:.15rem; }
+  .history-title { color: var(--text); font-weight:700; }
+  .history-meta { color: var(--muted); font-size:.72rem; }
+  .x-mini { background: none; border: none; color: var(--muted2); cursor:pointer; font-size: 1rem; line-height:1; }
+  .x-mini:hover { color: var(--danger); }
+  .loading { text-align: center; padding: 2.6rem 1rem; background: var(--panel); border: 1px solid var(--border); border-radius: 22px; }
+  .wave { display: inline-flex; align-items: flex-end; gap: 3px; height: 30px; margin-bottom: 0.85rem; }
   .wave span { display: block; width: 4px; border-radius: 4px; background: linear-gradient(to top, var(--accent), var(--accent2)); animation: wv 1.2s ease-in-out infinite; }
-  .wave span:nth-child(1){height:8px;animation-delay:0s} .wave span:nth-child(2){height:18px;animation-delay:0.1s} .wave span:nth-child(3){height:28px;animation-delay:0.2s} .wave span:nth-child(4){height:18px;animation-delay:0.3s} .wave span:nth-child(5){height:8px;animation-delay:0.4s} .wave span:nth-child(6){height:16px;animation-delay:0.5s} .wave span:nth-child(7){height:24px;animation-delay:0.15s}
+  .wave span:nth-child(1){height:8px;animation-delay:0s} .wave span:nth-child(2){height:18px;animation-delay:0.1s} .wave span:nth-child(3){height:29px;animation-delay:0.2s} .wave span:nth-child(4){height:18px;animation-delay:0.3s} .wave span:nth-child(5){height:8px;animation-delay:0.4s} .wave span:nth-child(6){height:16px;animation-delay:0.5s} .wave span:nth-child(7){height:24px;animation-delay:0.15s}
   @keyframes wv{0%,100%{transform:scaleY(0.3)}50%{transform:scaleY(1)}}
   .loading p { color: var(--muted); font-size: 0.88rem; }
-  .results-grid { display: grid; gap: 0.9rem; }
-  .rec-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.4rem; display: flex; gap: 1rem; align-items: flex-start; transition: border-color 0.2s, transform 0.2s; animation: slideIn 0.3s cubic-bezier(0.34,1.2,0.64,1) both; }
-  .rec-card:hover { border-color: rgba(192,132,252,0.3); transform: translateX(3px); }
+  .results-head { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:.8rem; }
+  .results-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.05rem; color:#e9d5ff; }
+  .results-note { font-size:.78rem; color:var(--muted); }
+  .results-grid { display: grid; gap: 0.85rem; }
+  .rec-card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 1rem; display: grid; grid-template-columns: auto 1fr; gap: 0.95rem; align-items: flex-start; transition: border-color 0.2s, transform 0.2s, background .2s; animation: slideIn 0.28s cubic-bezier(0.34,1.2,0.64,1) both; }
+  .rec-card:hover { border-color: rgba(192,132,252,0.36); transform: translateX(3px); background: rgba(30,30,44,.92); }
   @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
-  .rec-num { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; min-width: 1.8rem; line-height: 1; text-align: center; }
-  .rec-img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: rgba(129,140,248,0.1); }
-  .rec-body { flex: 1; }
-  .rec-name { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 0.15rem; }
-  .rec-listeners { font-size: 0.73rem; color: var(--accent3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
-  .rec-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.5rem; }
-  .rec-tag { font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 50px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.18); color: #6ee7b7; }
-  .rec-similar { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
-  .search-links { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  .sl { font-size: 0.72rem; padding: 0.25rem 0.65rem; border-radius: 50px; text-decoration: none; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); transition: all 0.15s; }
-  .sl:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
-  .error-msg { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 12px; padding: 1rem 1.25rem; color: #fca5a5; font-size: 0.85rem; line-height: 1.5; }
-  .powered { text-align: center; margin-top: 2.5rem; color: var(--muted); font-size: 0.78rem; }
+  .rec-media { display:grid; gap:.45rem; justify-items:center; }
+  .rec-img { width: 58px; height: 58px; border-radius: 16px; object-fit: cover; background: rgba(129,140,248,0.12); border:1px solid rgba(255,255,255,.07); }
+  .rec-num { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color:#d8b4fe; min-width: 2.1rem; line-height: 1; text-align: center; }
+  .rec-top { display:flex; justify-content:space-between; align-items:flex-start; gap:.6rem; }
+  .rec-name { font-family: 'Syne', sans-serif; font-size: 1.08rem; font-weight: 800; color: var(--text); margin-bottom: 0.2rem; }
+  .rec-listeners { font-size: 0.72rem; color: var(--accent3); text-transform: uppercase; letter-spacing: .9px; margin-bottom: 0.55rem; }
+  .score-pill { display:inline-flex; align-items:center; justify-content:center; min-width:3.1rem; padding:.32rem .5rem; border-radius:999px; border:1px solid rgba(52,211,153,.25); background:rgba(52,211,153,.09); color:#86efac; font-weight:800; font-size:.76rem; }
+  .rec-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.55rem; }
+  .rec-tag { font-size: 0.72rem; padding: 0.22rem 0.62rem; border-radius: 999px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.18); color: #86efac; }
+  .rec-similar { font-size: 0.81rem; color: var(--muted); line-height: 1.48; margin-bottom: 0.45rem; }
+  .evidence-row { display:flex; flex-wrap:wrap; gap:.35rem; margin:.5rem 0 .6rem; }
+  .evidence { font-size:.72rem; padding:.25rem .55rem; border-radius:999px; border:1px solid rgba(129,140,248,.22); color:#c7d2fe; background:rgba(129,140,248,.08); }
+  .evidence.ok { border-color: rgba(52,211,153,.26); color:#86efac; background:rgba(52,211,153,.08); }
+  .evidence.warn { border-color: rgba(251,191,36,.25); color:#fcd34d; background:rgba(251,191,36,.08); }
+  .search-links { display: flex; gap: 0.42rem; flex-wrap: wrap; margin-top:.35rem; }
+  .sl { font-size: 0.74rem; padding: 0.34rem 0.72rem; border-radius: 999px; text-decoration: none; background: rgba(255,255,255,0.045); border: 1px solid var(--border); color: var(--muted); transition: all 0.15s; }
+  .sl:hover { color: var(--text); border-color: rgba(255,255,255,0.22); transform: translateY(-1px); }
+  .sl.save { cursor:pointer; color:#f0abfc; border-color:rgba(240,171,252,.22); }
+  .sl.save.saved { color:#86efac; border-color:rgba(52,211,153,.28); background:rgba(52,211,153,.08); }
+  .error-msg, .tip-box { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 16px; padding: 1rem 1.1rem; color: #fca5a5; font-size: 0.86rem; line-height: 1.5; }
+  .tip-box { background: rgba(129,140,248,.08); border-color: rgba(129,140,248,.20); color:#c7d2fe; }
+  .powered { text-align: center; margin-top: 2.3rem; color: var(--muted); font-size: 0.78rem; }
   .powered a { color: var(--accent2); text-decoration: none; }
+  @media (max-width: 880px) {
+    header, .hero-inner, .main-grid { grid-template-columns: 1fr; }
+    header { align-items:start; }
+    .badge-free { width: max-content; }
+    .quality-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .app { padding-inline:.8rem; }
+    .panel { padding:1rem; border-radius:18px; }
+    .continent-grid { grid-template-columns: repeat(2, 1fr); }
+    .rec-card { grid-template-columns:1fr; }
+    .rec-media { display:flex; justify-content:flex-start; align-items:center; }
+    .rec-top { flex-direction:column; }
+  }
 </style>
 </head>
 <body>
@@ -86,47 +157,93 @@
 
 <div class="app">
   <header>
-    <div class="logo">♫ SoundMatch</div>
-    <p class="tagline">Descubrí nueva música basada en lo que ya amás</p>
-    <div class="badge-free">✦ 100% gratuito — sin registro</div>
+    <div>
+      <div class="logo">♫ SoundMatch</div>
+      <p class="tagline">Recomendaciones gratis por banda base, continente validado y parecido musical realista.</p>
+    </div>
+    <div class="badge-free">✦ Gratis · sin login · con historial local</div>
   </header>
 
-  <div class="panel">
-    <div class="panel-title">Tus artistas o bandas favoritas</div>
-    <div class="input-row">
-      <div class="input-wrap">
-        <input type="text" id="artistInput" placeholder="Ej: Radiohead, Soda Stereo, Billie Eilish..." maxlength="60">
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="panel">
+        <div class="panel-title">Buscar por banda + continente</div>
+        <p class="panel-sub">Escribí una o varias bandas. El motor prioriza artistas que aparecen como similares en Last.fm y después valida el origen con MusicBrainz.</p>
+        <div class="input-row">
+          <div class="input-wrap">
+            <input type="text" id="artistInput" placeholder="Ej: Radiohead, Soda Stereo, Molchat Doma..." maxlength="80" autocomplete="off">
+          </div>
+          <button class="btn-add" onclick="addTag()">+ Agregar</button>
+        </div>
+        <div class="tags" id="tagContainer"></div>
+        <button class="btn-discover" id="discoverBtn" onclick="go()">Descubrir música precisa ✦</button>
       </div>
-      <button class="btn-add" onclick="addTag()">+ Agregar</button>
+
+      <div class="panel">
+        <div class="panel-title">Modo precisión</div>
+        <div class="quality-grid">
+          <div class="quality"><b>👥 Afinidad</b><span>“Quien escucha A también escucha B”.</span></div>
+          <div class="quality"><b>🎧 Sonido</b><span>Tags compartidos entre banda base y candidato.</span></div>
+          <div class="quality"><b>🌍 Origen</b><span>País validado antes de mostrar resultados.</span></div>
+        </div>
+      </div>
     </div>
-    <div class="tags" id="tagContainer"></div>
+  </section>
+
+  <div class="main-grid">
+    <main class="stack">
+      <div class="panel">
+        <div class="panel-title">Continente</div>
+        <span class="section-label">Si elegís un continente, se descartan artistas con país confirmado fuera de ese continente.</span>
+        <div class="continent-grid" id="continentGrid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Géneros opcionales</div>
+        <span class="section-label">Usalos solo si querés acotar más el sonido. Máximo 3.</span>
+        <div class="chip-grid" id="genreGrid"></div>
+      </div>
+
+      <div id="results"></div>
+    </main>
+
+    <aside class="stack">
+      <div class="panel">
+        <div class="aside-actions">
+          <div class="panel-title" style="margin:0">Favoritos</div>
+          <button class="btn-small btn-clear" onclick="clearFavorites()">Limpiar</button>
+        </div>
+        <p class="panel-sub">Guardá artistas recomendados para volver a usarlos como referencia.</p>
+        <div class="mini-list" id="favoritesList"></div>
+      </div>
+
+      <div class="panel">
+        <div class="aside-actions">
+          <div class="panel-title" style="margin:0">Historial</div>
+          <button class="btn-small btn-clear" onclick="clearHistory()">Limpiar</button>
+        </div>
+        <p class="panel-sub">Tus últimas búsquedas quedan guardadas solo en este navegador.</p>
+        <div class="mini-list" id="historyList"></div>
+      </div>
+
+      <div class="tip-box">
+        <b>Tip para que acierte más:</b> usá una banda lo más específica posible. “Radiohead” funciona mejor que “rock”, y elegir pocos géneros evita filtrar candidatos buenos.
+      </div>
+    </aside>
   </div>
 
-  <div class="panel">
-    <div class="panel-title">¿De qué parte del mundo querés descubrir música?</div>
-    <span class="section-label">Elegí un continente (opcional)</span>
-    <div class="continent-grid" id="continentGrid"></div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">Géneros y mood</div>
-    <span class="section-label">Géneros (hasta 3)</span>
-    <div class="chip-grid" id="genreGrid"></div>
-    <br>
-    <span class="section-label">Estado de ánimo</span>
-    <div class="chip-grid" id="moodGrid"></div>
-  </div>
-
-  <button class="btn-discover" id="discoverBtn" onclick="go()">Descubrir música ✦</button>
-  <div id="results" style="margin-top:1.25rem"></div>
-
-  <div class="powered">Datos via <a href="https://last.fm" target="_blank">Last.fm API</a> &mdash; SoundMatch • 100% gratis</div>
+  <div class="powered">Datos via <a href="https://last.fm" target="_blank">Last.fm API</a> + <a href="https://musicbrainz.org" target="_blank">MusicBrainz</a> · SoundMatch gratuito</div>
 </div>
 
 <script>
-// Last.fm API key — gratuita, registrada en last.fm
-// Para producción: registrá tu propia en https://www.last.fm/api/account/create
+// Last.fm API key — gratuita, registrada en last.fm.
+// Para producción: registrá tu propia key en https://www.last.fm/api/account/create
 const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026'; // demo key pública
+
+const STORAGE_KEYS = {
+  favorites: 'soundmatch:favorites:v3',
+  history: 'soundmatch:history:v3'
+};
 
 const CONTINENTS = [
   { id:'all', flag:'🌍', name:'Todo el mundo' },
@@ -139,208 +256,831 @@ const CONTINENTS = [
   { id:'middleeast', flag:'🕌', name:'Medio Oriente' },
 ];
 
-// Palabras clave por continente para filtrar tags/géneros en Last.fm
-const CONTINENT_TAGS = {
-  latam: ['latin','cumbia','reggaeton','bossa nova','tango','samba','salsa','latin rock','latin pop','musica brasileira','tropical','ska','rock en español','mexican','colombian','argentinian','brazilian','chilean'],
-  europe: ['british','uk','french','german','swedish','norwegian','scandinavian','italian','spanish','european','celtic','britpop','krautrock','cold wave','neue deutsche welle'],
-  northamerica: ['american','usa','canadian','country','blues','hip hop','r&b','new york','los angeles','nashville','chicago blues'],
-  africa: ['afrobeat','afropop','amapiano','kwaito','highlife','afro','south african','nigerian','ghanaian','african'],
-  asia: ['j-pop','j-rock','k-pop','k-indie','mandopop','bollywood','japanese','korean','chinese','thai','vietnamese','anime','city pop'],
-  oceania: ['australian','new zealand','indie pop','surf'],
-  middleeast: ['arabic','persian','turkish','israeli','middle eastern','oud','oriental'],
+// Tags amplios para buscar candidatos regionales. No prueban origen por sí solos.
+const CONTINENT_QUERY_TAGS = {
+  latam: ['latin rock','rock en espanol','rock en español','latin pop','cumbia','bossa nova','samba','tango','salsa','reggaeton','mpb','musica brasileira','tropicalia','argentinian','brazilian','chilean','mexican','colombian','peruvian','uruguayan'],
+  europe: ['british','english','scottish','irish','french','german','swedish','norwegian','italian','spanish','dutch','icelandic','britpop','krautrock','european','eurovision'],
+  northamerica: ['american','canadian','usa','united states','canada','new york','los angeles','nashville','chicago','seattle','country','blues'],
+  africa: ['african','afrobeat','afropop','amapiano','kwaito','highlife','south african','nigerian','ghanaian','ethiopian','malian','senegalese'],
+  asia: ['japanese','korean','chinese','thai','indonesian','filipino','indian','bollywood','j-pop','j-rock','k-pop','city pop','mandopop'],
+  oceania: ['australian','new zealand','kiwi','aussie','melbourne','sydney','surf rock'],
+  middleeast: ['middle eastern','arabic','persian','iranian','turkish','israeli','lebanese','egyptian','anatolian rock','oud'],
   all: [],
 };
 
-const GENRES = ['Rock','Pop','Electrónica','Hip-Hop','Jazz','Metal','Indie','Folk','R&B','Cumbia','Reggae','Clásica','Blues','Punk','Bossa Nova','K-Pop','J-Pop','Afrobeat'];
-const MOODS = ['🌙 Nocturna','☀️ Energizante','😌 Relajante','💔 Melancólica','🎉 Festiva','🔥 Intensa','🌿 Tranquila'];
-const MOOD_TAGS = {
-  '🌙 Nocturna':['dark','melancholic','nocturnal','post-punk','goth'],
-  '☀️ Energizante':['energetic','upbeat','dance','power pop','workout'],
-  '😌 Relajante':['chill','ambient','lo-fi','acoustic','calm'],
-  '💔 Melancólica':['sad','emotional','melancholy','emo','heartbreak'],
-  '🎉 Festiva':['party','dance','upbeat','funk','fiesta'],
-  '🔥 Intensa':['intense','aggressive','heavy','epic','metal'],
-  '🌿 Tranquila':['peaceful','acoustic','folk','soft','mellow'],
+// Tags nacionales de alta confianza para usar solo como fallback si MusicBrainz no trae país.
+const CONTINENT_ORIGIN_TAGS = {
+  latam: ['argentinian','argentina','brazilian','brazil','brasil','chilean','chile','uruguayan','uruguay','paraguayan','paraguay','bolivian','bolivia','peruvian','peru','ecuadorian','ecuador','colombian','colombia','venezuelan','venezuela','mexican','mexico','cuban','cuba','dominican','dominican republic','puerto rican','puerto rico','panamanian','panama','costa rican','costa rica','guatemalan','guatemala','honduran','honduras','salvadoran','el salvador','nicaraguan','nicaragua'],
+  europe: ['british','english','scottish','welsh','irish','french','france','german','germany','spanish','spain','italian','italy','portuguese','portugal','dutch','netherlands','belgian','belgium','swedish','sweden','norwegian','norway','danish','denmark','finnish','finland','icelandic','iceland','polish','poland','czech','czechia','slovak','slovakia','austrian','austria','swiss','switzerland','greek','greece','romanian','romania','hungarian','hungary','serbian','serbia','croatian','croatia','slovenian','slovenia','ukrainian','ukraine','russian','russia','estonian','estonia','latvian','latvia','lithuanian','lithuania'],
+  northamerica: ['american','usa','u.s.a.','united states','us artist','canadian','canada','quebec','new york','los angeles','californian','seattle','nashville','chicago'],
+  africa: ['african','south african','south africa','nigerian','nigeria','ghanaian','ghana','ethiopian','ethiopia','malian','mali','senegalese','senegal','kenyan','kenya','tanzanian','tanzania','congolese','congo','moroccan','morocco','algerian','algeria','tunisian','tunisia','angolan','angola','cape verdean','cape verde','zimbabwean','zimbabwe','ugandan','uganda','cameroonian','cameroon'],
+  asia: ['japanese','japan','korean','south korean','korea','chinese','china','taiwanese','taiwan','hong kong','thai','thailand','vietnamese','vietnam','indonesian','indonesia','filipino','philippines','malaysian','malaysia','singaporean','singapore','indian','india','pakistani','pakistan','bangladeshi','bangladesh','sri lankan','sri lanka','mongolian','mongolia'],
+  oceania: ['australian','australia','aussie','new zealand','new zealander','kiwi','papua new guinea','fijian','fiji'],
+  middleeast: ['turkish','turkey','iranian','iran','persian','iraqi','iraq','israeli','israel','palestinian','palestine','lebanese','lebanon','syrian','syria','jordanian','jordan','saudi','saudi arabia','emirati','uae','qatari','qatar','kuwaiti','kuwait','bahraini','bahrain','omani','oman','yemeni','yemen','egyptian','egypt','armenian','armenia','georgian','georgia','azerbaijani','azerbaijan'],
+  all: [],
 };
 
-let artists = [], selectedContinent = 'all', selectedGenres = [], selectedMood = '';
+const CONTINENT_COUNTRIES = {
+  latam: ['AR','BO','BR','CL','CO','CR','CU','DO','EC','SV','GT','HN','MX','NI','PA','PY','PE','PR','UY','VE','BZ','HT','JM','TT','GY','SR','GF','GP','MQ','AW','CW','BQ','SX','AI','AG','BS','BB','DM','GD','KN','LC','VC'],
+  europe: ['AL','AD','AT','BY','BE','BA','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IS','IE','IT','XK','LV','LI','LT','LU','MT','MD','MC','ME','NL','MK','NO','PL','PT','RO','RU','SM','RS','SK','SI','ES','SE','CH','UA','GB','VA'],
+  northamerica: ['US','CA','GL','BM'],
+  africa: ['DZ','AO','BJ','BW','BF','BI','CV','CM','CF','TD','KM','CG','CD','CI','DJ','GQ','ER','SZ','ET','GA','GM','GH','GN','GW','KE','LS','LR','LY','MG','MW','ML','MR','MU','YT','MA','MZ','NA','NE','NG','RE','RW','SH','ST','SN','SC','SL','SO','ZA','SS','SD','TZ','TG','TN','UG','EH','ZM','ZW'],
+  asia: ['AF','BD','BT','BN','KH','CN','HK','IN','ID','JP','KZ','KG','LA','MO','MY','MV','MN','MM','NP','KP','PK','PH','SG','KR','LK','TW','TJ','TH','TM','UZ','VN'],
+  oceania: ['AS','AU','CK','FJ','PF','GU','KI','MH','FM','NR','NC','NZ','NU','NF','MP','PW','PG','PN','WS','SB','TK','TO','TV','VU','WF'],
+  middleeast: ['AM','AZ','BH','CY','EG','GE','IR','IQ','IL','JO','KW','LB','OM','PS','QA','SA','SY','TR','AE','YE']
+};
+
+const GENRES = ['Rock','Pop','Electrónica','Hip-Hop','Jazz','Metal','Indie','Folk','R&B','Cumbia','Reggae','Clásica','Blues','Punk','Bossa Nova','K-Pop','J-Pop','Afrobeat'];
+const GENRE_ALIASES = {
+  'Rock': ['rock','alternative rock','indie rock','post rock','psychedelic rock','latin rock','garage rock'],
+  'Pop': ['pop','synthpop','indie pop','latin pop','dream pop','art pop'],
+  'Electrónica': ['electronic','electronica','electrónica','edm','techno','house','ambient','idm','downtempo','trip hop'],
+  'Hip-Hop': ['hip hop','hip-hop','rap','trap','boom bap'],
+  'Jazz': ['jazz','nu jazz','latin jazz','jazz fusion'],
+  'Metal': ['metal','heavy metal','black metal','death metal','progressive metal','doom metal'],
+  'Indie': ['indie','indie rock','indie pop','alternative','lo-fi'],
+  'Folk': ['folk','folk rock','singer-songwriter','acoustic','americana'],
+  'R&B': ['r&b','rnb','soul','neo soul','funk'],
+  'Cumbia': ['cumbia','cumbia villera','tropical'],
+  'Reggae': ['reggae','dub','ska','rocksteady'],
+  'Clásica': ['classical','clasica','clásica','orchestral','composer'],
+  'Blues': ['blues','chicago blues','delta blues'],
+  'Punk': ['punk','post-punk','hardcore punk','new wave'],
+  'Bossa Nova': ['bossa nova','mpb','musica brasileira','música brasileira'],
+  'K-Pop': ['k-pop','kpop','korean pop'],
+  'J-Pop': ['j-pop','jpop','japanese pop'],
+  'Afrobeat': ['afrobeat','afropop','afro pop','afro-funk']
+};
+
+let artists = [];
+let selectedContinent = 'all';
+let selectedGenres = [];
+let favorites = loadJson(STORAGE_KEYS.favorites, []);
+let historyItems = loadJson(STORAGE_KEYS.history, []);
+let lastResults = [];
+
+const apiCache = new Map();
+const mbCache = new Map();
+let lastMusicBrainzRequestAt = 0;
 
 function init() {
+  renderContinents();
+  renderGenres();
+  renderTags();
+  renderFavorites();
+  renderHistory();
+  document.getElementById('artistInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTag();
+  });
+}
+
+function renderContinents() {
   const cg = document.getElementById('continentGrid');
+  cg.innerHTML = '';
   CONTINENTS.forEach(c => {
     const div = document.createElement('div');
-    div.className = 'cont-btn' + (c.id === 'all' ? ' active' : '');
+    div.className = 'cont-btn' + (c.id === selectedContinent ? ' active' : '');
     div.dataset.id = c.id;
-    div.innerHTML = `<span class="cont-flag">${c.flag}</span><span class="cont-name">${c.name}</span>`;
+    div.innerHTML = `<span class="cont-flag">${c.flag}</span><span class="cont-name">${escapeHtml(c.name)}</span>`;
     div.onclick = () => selectContinent(c.id);
     cg.appendChild(div);
   });
+}
 
+function renderGenres() {
   const gg = document.getElementById('genreGrid');
+  gg.innerHTML = '';
   GENRES.forEach(g => {
-    const el = document.createElement('div'); el.className = 'chip'; el.textContent = g;
+    const el = document.createElement('div');
+    el.className = 'chip' + (selectedGenres.includes(g) ? ' active' : '');
+    el.textContent = g;
     el.onclick = () => toggleChip(g, el, selectedGenres, 3);
     gg.appendChild(el);
-  });
-
-  const mg = document.getElementById('moodGrid');
-  MOODS.forEach(m => {
-    const el = document.createElement('div'); el.className = 'chip mood-chip'; el.textContent = m;
-    el.onclick = () => {
-      document.querySelectorAll('.mood-chip').forEach(b => b.classList.remove('active'));
-      if (selectedMood === m) { selectedMood = ''; return; }
-      selectedMood = m; el.classList.add('active');
-    };
-    mg.appendChild(el);
   });
 }
 
 function selectContinent(id) {
   selectedContinent = id;
-  document.querySelectorAll('.cont-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+  renderContinents();
 }
 
 function toggleChip(val, el, arr, max) {
-  if (arr.includes(val)) { arr.splice(arr.indexOf(val),1); el.classList.remove('active'); }
-  else if (arr.length < max) { arr.push(val); el.classList.add('active'); }
+  if (arr.includes(val)) {
+    arr.splice(arr.indexOf(val), 1);
+    el.classList.remove('active');
+  } else if (arr.length < max) {
+    arr.push(val);
+    el.classList.add('active');
+  }
 }
 
 function addTag() {
   const inp = document.getElementById('artistInput');
   const v = inp.value.trim();
-  if (!v || artists.includes(v) || artists.length >= 6) return;
-  artists.push(v); renderTags(); inp.value = ''; inp.focus();
+  if (!v || artists.map(normalizeText).includes(normalizeText(v)) || artists.length >= 6) return;
+  artists.push(v);
+  renderTags();
+  inp.value = '';
+  inp.focus();
 }
 
-function removeTag(i) { artists.splice(i,1); renderTags(); }
+function addArtistByName(name) {
+  const v = String(name || '').trim();
+  if (!v || artists.map(normalizeText).includes(normalizeText(v)) || artists.length >= 6) return;
+  artists.push(v);
+  renderTags();
+}
+
+function addPendingInputAsTag() {
+  const inp = document.getElementById('artistInput');
+  const v = inp.value.trim();
+  if (v && !artists.map(normalizeText).includes(normalizeText(v)) && artists.length < 6) {
+    artists.push(v);
+    inp.value = '';
+    renderTags();
+  }
+}
+
+function removeTag(i) {
+  artists.splice(i, 1);
+  renderTags();
+}
 
 function renderTags() {
-  const c = document.getElementById('tagContainer'); c.innerHTML = '';
-  artists.forEach((a,i) => {
-    const d = document.createElement('div'); d.className = 'tag';
-    d.innerHTML = `<span>${a}</span><button class="tag-remove" onclick="removeTag(${i})">×</button>`;
+  const c = document.getElementById('tagContainer');
+  c.innerHTML = '';
+  artists.forEach((a, i) => {
+    const d = document.createElement('div');
+    d.className = 'tag';
+    d.innerHTML = `<span>${escapeHtml(a)}</span><button class="tag-remove" onclick="removeTag(${i})">×</button>`;
     c.appendChild(d);
   });
 }
 
-document.getElementById('artistInput').addEventListener('keydown', e => { if (e.key==='Enter') addTag(); });
-
 async function go() {
+  addPendingInputAsTag();
   if (!artists.length) {
-    document.getElementById('results').innerHTML = `<div class="error-msg">👆 Agregá al menos un artista favorito.</div>`;
+    document.getElementById('results').innerHTML = `<div class="error-msg">👆 Agregá al menos una banda o artista.</div>`;
     return;
   }
+
   const btn = document.getElementById('discoverBtn');
-  btn.disabled = true; btn.textContent = 'Buscando...';
-  document.getElementById('results').innerHTML = `<div class="loading"><div class="wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><p>Buscando artistas similares en Last.fm...</p></div>`;
+  btn.disabled = true;
+  btn.textContent = 'Buscando con filtro preciso...';
+
+  const strictText = selectedContinent === 'all'
+    ? 'sin filtro regional'
+    : `validando país dentro de ${getContinentName(selectedContinent)}`;
+
+  document.getElementById('results').innerHTML = `
+    <div class="loading">
+      <div class="wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <p>Buscando artistas cercanos por oyentes, sonido y origen, ${strictText}...</p>
+    </div>`;
 
   try {
     const all = await fetchSimilar();
-    if (!all.length) throw new Error('No se encontraron artistas similares. Probá con otros nombres.');
+    if (!all.length) throw new Error('No se encontraron artistas con suficiente parecido y origen confiable. Probá con otra banda o sacá géneros.');
+    lastResults = all;
+    saveSearch();
     renderResults(all);
-  } catch(e) {
-    document.getElementById('results').innerHTML = `<div class="error-msg">⚠️ ${e.message}</div>`;
+  } catch (e) {
+    document.getElementById('results').innerHTML = `<div class="error-msg">⚠️ ${escapeHtml(e.message)}</div>`;
   } finally {
-    btn.disabled = false; btn.textContent = 'Descubrir música ✦';
+    btn.disabled = false;
+    btn.textContent = 'Descubrir música precisa ✦';
   }
+}
+
+function loadJson(key, fallback) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key));
+    return Array.isArray(value) ? value : fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function saveJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function saveSearch() {
+  const item = {
+    artists: [...artists],
+    continent: selectedContinent,
+    genres: [...selectedGenres],
+    ts: Date.now()
+  };
+  const signature = JSON.stringify({ artists: item.artists.map(normalizeText), continent: item.continent, genres: item.genres });
+  historyItems = historyItems.filter(h => JSON.stringify({ artists: (h.artists || []).map(normalizeText), continent: h.continent, genres: h.genres || [] }) !== signature);
+  historyItems.unshift(item);
+  historyItems = historyItems.slice(0, 8);
+  saveJson(STORAGE_KEYS.history, historyItems);
+  renderHistory();
+}
+
+function restoreHistory(index) {
+  const item = historyItems[index];
+  if (!item) return;
+  artists = [...(item.artists || [])];
+  selectedContinent = item.continent || 'all';
+  selectedGenres = [...(item.genres || [])];
+  renderTags();
+  renderContinents();
+  renderGenres();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function clearHistory() {
+  historyItems = [];
+  saveJson(STORAGE_KEYS.history, historyItems);
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  el.innerHTML = '';
+  if (!historyItems.length) {
+    el.innerHTML = `<div class="empty-note">Todavía no hay búsquedas guardadas.</div>`;
+    return;
+  }
+  historyItems.forEach((h, i) => {
+    const chip = document.createElement('button');
+    chip.className = 'history-chip';
+    chip.onclick = () => restoreHistory(i);
+    const title = (h.artists || []).join(', ') || 'Búsqueda';
+    const meta = `${getContinentName(h.continent || 'all')}${h.genres?.length ? ' · ' + h.genres.join(', ') : ''}`;
+    chip.innerHTML = `<span class="history-main"><span class="history-title">${escapeHtml(title)}</span><span class="history-meta">${escapeHtml(meta)}</span></span>`;
+    el.appendChild(chip);
+  });
+}
+
+function toggleFavoriteByName(encodedName, encodedUrl = '') {
+  const name = decodeURIComponent(encodedName);
+  const url = encodedUrl ? decodeURIComponent(encodedUrl) : '';
+  const key = normalizeText(name);
+  const exists = favorites.some(f => normalizeText(f.name) === key);
+  if (exists) favorites = favorites.filter(f => normalizeText(f.name) !== key);
+  else favorites.unshift({ name, url, ts: Date.now() });
+  favorites = favorites.slice(0, 30);
+  saveJson(STORAGE_KEYS.favorites, favorites);
+  renderFavorites();
+  if (lastResults.length) renderResults(lastResults);
+}
+
+function isFavorite(name) {
+  const key = normalizeText(name);
+  return favorites.some(f => normalizeText(f.name) === key);
+}
+
+function clearFavorites() {
+  favorites = [];
+  saveJson(STORAGE_KEYS.favorites, favorites);
+  renderFavorites();
+  if (lastResults.length) renderResults(lastResults);
+}
+
+function removeFavorite(index) {
+  favorites.splice(index, 1);
+  saveJson(STORAGE_KEYS.favorites, favorites);
+  renderFavorites();
+  if (lastResults.length) renderResults(lastResults);
+}
+
+function renderFavorites() {
+  const el = document.getElementById('favoritesList');
+  el.innerHTML = '';
+  if (!favorites.length) {
+    el.innerHTML = `<div class="empty-note">Guardá recomendaciones con el botón “Guardar”.</div>`;
+    return;
+  }
+  favorites.forEach((f, i) => {
+    const wrap = document.createElement('span');
+    wrap.className = 'fav-chip';
+    wrap.innerHTML = `<span onclick="addArtistByName(decodeURIComponent('${encodeURIComponent(f.name)}'))">♥ ${escapeHtml(f.name)}</span><button class="x-mini" onclick="event.stopPropagation(); removeFavorite(${i})">×</button>`;
+    el.appendChild(wrap);
+  });
+}
+
+function normalizeText(value) {
+  return (value || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9\s.-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function uniq(arr) {
+  return [...new Set(arr.filter(Boolean))];
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getContinentName(id) {
+  return CONTINENTS.find(c => c.id === id)?.name || id;
+}
+
+function getArtistTags(artistInfo) {
+  return (artistInfo?.tags?.tag || []).map(t => t?.name).filter(Boolean);
+}
+
+function isUsefulSeedTag(tag) {
+  const t = normalizeText(tag);
+  const ignored = ['seen live','favorites','favourite','male vocalists','female vocalists','spotify','lastfm','albums i own','under 2000 listeners','streamable'];
+  return t && !ignored.some(i => t.includes(i)) && t.length > 2;
+}
+
+function textMatchesTerm(text, term) {
+  const t = normalizeText(text);
+  const w = normalizeText(term);
+  if (!t || !w) return false;
+  if (w.length <= 3) return t === w;
+  return t === w || t.includes(w) || w.includes(t);
+}
+
+function tagMatches(tags, wanted) {
+  const normalizedTags = tags.map(normalizeText);
+  const normalizedWanted = wanted.map(normalizeText);
+  return normalizedWanted.some(w => normalizedTags.some(t => textMatchesTerm(t, w)));
+}
+
+function countTagOverlap(tagsA, tagsB) {
+  const a = tagsA.map(normalizeText);
+  const b = tagsB.map(normalizeText);
+  const matched = new Set();
+  for (const tag of a) {
+    const found = b.find(seedTag => textMatchesTerm(tag, seedTag));
+    if (found) matched.add(found);
+  }
+  return matched.size;
+}
+
+function getSelectedGenreTerms() {
+  return uniq(selectedGenres.flatMap(g => GENRE_ALIASES[g] || [g]).map(normalizeText));
+}
+
+function inferOriginFromTags(tags, continentId = selectedContinent) {
+  if (continentId === 'all') return null;
+  const originTags = CONTINENT_ORIGIN_TAGS[continentId] || [];
+  for (const tag of tags) {
+    const match = originTags.find(origin => textMatchesTerm(tag, origin));
+    if (match) {
+      return {
+        ok: true,
+        continent: continentId,
+        label: tag,
+        source: 'tag nacional Last.fm',
+        confidence: 0.68,
+        strict: false
+      };
+    }
+  }
+  return null;
+}
+
+function getContinentIdsForCountry(countryCode) {
+  const code = (countryCode || '').toUpperCase();
+  const matches = [];
+  for (const [continent, codes] of Object.entries(CONTINENT_COUNTRIES)) {
+    if (codes.includes(code)) matches.push(continent);
+  }
+  return matches;
+}
+
+function countryMatchesContinent(countryCode, continentId) {
+  if (continentId === 'all') return true;
+  return getContinentIdsForCountry(countryCode).includes(continentId);
+}
+
+function getCountryFromMusicBrainzArtist(artist) {
+  return artist?.country
+    || artist?.area?.['iso-3166-1-codes']?.[0]
+    || artist?.['begin-area']?.['iso-3166-1-codes']?.[0]
+    || artist?.['end-area']?.['iso-3166-1-codes']?.[0]
+    || null;
+}
+
+function chooseMusicBrainzArtist(list, targetName) {
+  const target = normalizeText(targetName);
+  const candidates = (list || []).filter(a => a?.name);
+  const exact = candidates.find(a => normalizeText(a.name) === target);
+  if (exact) return exact;
+  const aliasExact = candidates.find(a => (a.aliases || []).some(alias => normalizeText(alias.name) === target));
+  if (aliasExact) return aliasExact;
+
+  // Si no hay match exacto, evitamos elegir un homónimo dudoso con score bajo.
+  const sorted = [...candidates].sort((a, b) => (b.score || 0) - (a.score || 0));
+  const best = sorted[0] || null;
+  if (best && (best.score || 0) >= 80) return best;
+  return null;
+}
+
+async function lastfm(method, params = {}) {
+  const cacheKey = method + JSON.stringify(params);
+  if (apiCache.has(cacheKey)) return apiCache.get(cacheKey);
+
+  const url = new URL('https://ws.audioscrobbler.com/2.0/');
+  url.search = new URLSearchParams({
+    method,
+    api_key: LASTFM_KEY,
+    format: 'json',
+    autocorrect: '1',
+    ...params
+  });
+
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error('No se pudo consultar Last.fm.');
+  const data = await res.json();
+  if (data?.error) throw new Error(data.message || 'Last.fm devolvió un error.');
+
+  apiCache.set(cacheKey, data);
+  return data;
+}
+
+async function musicBrainz(url) {
+  const cacheKey = url.toString();
+  if (mbCache.has(cacheKey)) return mbCache.get(cacheKey);
+
+  // MusicBrainz pide uso moderado del servicio público. Limitamos a ~1 request/seg.
+  const elapsed = Date.now() - lastMusicBrainzRequestAt;
+  if (elapsed < 1100) await wait(1100 - elapsed);
+  lastMusicBrainzRequestAt = Date.now();
+
+  const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
+  if (!res.ok) throw new Error('No se pudo consultar MusicBrainz.');
+  const data = await res.json();
+  mbCache.set(cacheKey, data);
+  return data;
+}
+
+async function getArtistInfo(name) {
+  const data = await lastfm('artist.getInfo', { artist: name });
+  return data?.artist || null;
+}
+
+async function getSimilarArtists(name, limit = 180) {
+  const data = await lastfm('artist.getsimilar', { artist: name, limit: String(limit) });
+  return data?.similarartists?.artist || [];
+}
+
+async function getTopArtistsByTag(tag, limit = 28) {
+  try {
+    const data = await lastfm('tag.getTopArtists', { tag, limit: String(limit) });
+    return data?.topartists?.artist || [];
+  } catch (e) {
+    console.warn('No se pudo consultar el tag:', tag, e);
+    return [];
+  }
+}
+
+async function getOriginFromMusicBrainz(name, mbid = '') {
+  try {
+    if (mbid) {
+      const lookupUrl = new URL(`https://musicbrainz.org/ws/2/artist/${encodeURIComponent(mbid)}`);
+      lookupUrl.search = new URLSearchParams({ fmt: 'json', inc: 'aliases' });
+      const artist = await musicBrainz(lookupUrl);
+      const country = getCountryFromMusicBrainzArtist(artist);
+      if (country) {
+        return { countryCode: country.toUpperCase(), label: artist?.area?.name || artist?.['begin-area']?.name || country.toUpperCase(), source: 'MusicBrainz', confidence: 0.97 };
+      }
+    }
+
+    const cleanName = name.replace(/["\\]/g, ' ').trim();
+    const searchUrl = new URL('https://musicbrainz.org/ws/2/artist/');
+    searchUrl.search = new URLSearchParams({ query: `artist:"${cleanName}"`, fmt: 'json', limit: '8' });
+    const data = await musicBrainz(searchUrl);
+    const chosen = chooseMusicBrainzArtist(data?.artists || [], name);
+    const country = getCountryFromMusicBrainzArtist(chosen);
+    if (country) {
+      return { countryCode: country.toUpperCase(), label: chosen?.area?.name || chosen?.['begin-area']?.name || country.toUpperCase(), source: 'MusicBrainz', confidence: 0.94 };
+    }
+  } catch (e) {
+    console.warn('No se pudo validar origen en MusicBrainz:', name, e);
+  }
+  return null;
+}
+
+async function mapLimit(items, limit, mapper) {
+  const results = [];
+  const queue = [...items];
+  async function worker() {
+    while (queue.length) {
+      const item = queue.shift();
+      results.push(await mapper(item));
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
+function addCandidate(map, artist, source = {}) {
+  if (!artist?.name) return;
+  const key = normalizeText(artist.name);
+  if (!key || artists.map(normalizeText).includes(key)) return;
+
+  const current = map.get(key) || {
+    name: artist.name,
+    url: artist.url || '',
+    similarTo: source.similarTo || '',
+    directSimilarity: 0,
+    reverseSimilarity: 0,
+    tagHits: 0,
+    directRank: 999,
+    tagSources: new Set()
+  };
+
+  if (source.directSimilarity && source.directSimilarity > current.directSimilarity) {
+    current.directSimilarity = source.directSimilarity;
+    current.similarTo = source.similarTo || current.similarTo;
+    current.directRank = source.directRank || current.directRank;
+  }
+  if (source.tagHit) current.tagHits += 1;
+  if (source.tagName) current.tagSources.add(source.tagName);
+  map.set(key, current);
+}
+
+async function addReverseSimilarity(candidate, seedNames) {
+  if (candidate.directSimilarity > 0.12) return candidate;
+  try {
+    const reverseList = await getSimilarArtists(candidate.name, 100);
+    const seedSet = new Set(seedNames.map(normalizeText));
+    const found = reverseList.find(a => seedSet.has(normalizeText(a.name)));
+    if (found) {
+      candidate.reverseSimilarity = Math.max(candidate.reverseSimilarity || 0, parseFloat(found.match || 0));
+      candidate.similarTo = found.name || candidate.similarTo || seedNames[0];
+    }
+  } catch (e) {
+    console.warn('No se pudo calcular similitud inversa:', candidate.name, e);
+  }
+  return candidate;
+}
+
+async function verifyContinentStrict(candidate, info, tags) {
+  if (selectedContinent === 'all') {
+    return { ok: true, label: 'Todo el mundo', source: 'sin filtro regional', confidence: 1, strict: true };
+  }
+
+  // Primero MusicBrainz: si confirma país contrario, descartamos aunque Last.fm tenga tags ambiguos.
+  const mbOrigin = await getOriginFromMusicBrainz(info?.name || candidate.name, info?.mbid || '');
+  if (mbOrigin?.countryCode) {
+    const ok = countryMatchesContinent(mbOrigin.countryCode, selectedContinent);
+    return {
+      ok,
+      label: `${mbOrigin.label} (${mbOrigin.countryCode})`,
+      source: 'MusicBrainz',
+      confidence: ok ? mbOrigin.confidence : 0,
+      strict: true
+    };
+  }
+
+  // Fallback: tags nacionales claros, no estilos amplios como “latin”, “arabic” o “european”.
+  const tagOrigin = inferOriginFromTags(tags, selectedContinent);
+  if (tagOrigin) return tagOrigin;
+
+  return {
+    ok: false,
+    label: 'origen no confirmado',
+    source: 'sin país confirmado',
+    confidence: 0,
+    strict: false
+  };
 }
 
 async function fetchSimilar() {
-  const seen = new Set(artists.map(a => a.toLowerCase()));
-  const results = [];
+  const candidateMap = new Map();
+  const seedTags = [];
+  const seedNames = [...artists];
+  const seedProfiles = [];
 
   for (const artist of artists) {
-    try {
-      const url = `https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=${encodeURIComponent(artist)}&api_key=${LASTFM_KEY}&limit=30&format=json`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const list = data?.similarartists?.artist || [];
+    const artistInfo = await getArtistInfo(artist);
+    const thisSeedTags = getArtistTags(artistInfo).filter(isUsefulSeedTag).slice(0, 18);
+    seedTags.push(...thisSeedTags);
+    seedProfiles.push({ name: artistInfo?.name || artist, tags: thisSeedTags });
 
-      for (const a of list) {
-        if (seen.has(a.name.toLowerCase())) continue;
-
-        // Fetch artist info for tags
-        const infoUrl = `https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(a.name)}&api_key=${LASTFM_KEY}&format=json`;
-        const infoRes = await fetch(infoUrl);
-        const info = await infoRes.json();
-        const artistInfo = info?.artist;
-        const tags = (artistInfo?.tags?.tag || []).map(t => t.name.toLowerCase());
-        const listeners = parseInt(artistInfo?.stats?.listeners || 0);
-
-        // Filter by continent
-        if (selectedContinent !== 'all') {
-          const contTags = CONTINENT_TAGS[selectedContinent] || [];
-          const matches = contTags.some(ct => tags.some(t => t.includes(ct) || ct.includes(t)));
-          if (!matches) continue;
-        }
-
-        // Filter by genre
-        if (selectedGenres.length) {
-          const gMatch = selectedGenres.some(g => tags.some(t => t.includes(g.toLowerCase()) || g.toLowerCase().includes(t)));
-          if (!gMatch) continue;
-        }
-
-        // Filter by mood
-        if (selectedMood) {
-          const mTags = MOOD_TAGS[selectedMood] || [];
-          const mMatch = mTags.some(mt => tags.some(t => t.includes(mt) || mt.includes(t)));
-          if (!mMatch) continue;
-        }
-
-        if (!seen.has(a.name.toLowerCase())) {
-          seen.add(a.name.toLowerCase());
-          const img = artistInfo?.image?.find(i=>i.size==='medium')?.['#text'] || '';
-          results.push({
-            name: a.name,
-            match: Math.round(parseFloat(a.match || 0) * 100),
-            tags: (artistInfo?.tags?.tag || []).slice(0,4).map(t=>t.name),
-            listeners,
-            img: img && !img.includes('2a96cbd8') ? img : '',
-            similarTo: artist,
-            url: a.url,
-          });
-        }
-        if (results.length >= 12) break;
-      }
-      if (results.length >= 12) break;
-    } catch(e) { console.warn(e); }
+    const similarList = await getSimilarArtists(artist, 220);
+    similarList.forEach((a, idx) => {
+      addCandidate(candidateMap, a, {
+        similarTo: artistInfo?.name || artist,
+        directSimilarity: parseFloat(a.match || 0),
+        directRank: idx + 1
+      });
+    });
   }
 
-  // Sort by listeners desc, take top 8
-  return results.sort((a,b) => b.listeners - a.listeners).slice(0,8);
+  const cleanSeedTags = uniq(seedTags.map(normalizeText)).slice(0, 20);
+  const selectedGenreTerms = getSelectedGenreTerms();
+
+  // Candidatos regionales y por sonido: sirven para ampliar la búsqueda, no para validar país.
+  const queryTags = [];
+  if (selectedContinent !== 'all') queryTags.push(...(CONTINENT_QUERY_TAGS[selectedContinent] || []));
+  queryTags.push(...selectedGenreTerms, ...cleanSeedTags.slice(0, 9));
+
+  const tagQueries = uniq(queryTags.map(normalizeText)).filter(Boolean).slice(0, 26);
+  const taggedLists = await mapLimit(tagQueries, 4, async tag => {
+    const topArtists = await getTopArtistsByTag(tag, 28);
+    return topArtists.map(a => ({ ...a, _tagName: tag }));
+  });
+
+  taggedLists.flat().forEach(a => {
+    addCandidate(candidateMap, a, { tagHit: true, tagName: a._tagName });
+  });
+
+  const rawCandidates = [...candidateMap.values()]
+    .sort((a, b) => b.directSimilarity - a.directSimilarity || b.tagHits - a.tagHits || a.directRank - b.directRank)
+    .slice(0, 210);
+
+  const evaluated = await mapLimit(rawCandidates, 6, async candidate => {
+    try {
+      const info = await getArtistInfo(candidate.name);
+      if (!info) return null;
+
+      const tags = getArtistTags(info).filter(isUsefulSeedTag);
+      const normalizedTags = tags.map(normalizeText);
+      const listeners = parseInt(info?.stats?.listeners || 0, 10) || 0;
+      const selectedGenreOk = !selectedGenres.length || tagMatches(normalizedTags, selectedGenreTerms);
+      if (!selectedGenreOk) return null;
+
+      const soundOverlap = countTagOverlap(normalizedTags, cleanSeedTags);
+      const regionalTagSignal = selectedContinent === 'all' || tagMatches(normalizedTags, CONTINENT_QUERY_TAGS[selectedContinent] || []);
+      const originTagSignal = selectedContinent === 'all' || !!inferOriginFromTags(normalizedTags, selectedContinent);
+
+      // Si no tiene ninguna señal musical real, lo descartamos antes de validar país.
+      if (candidate.directSimilarity < 0.035 && candidate.tagHits < 2 && soundOverlap === 0) return null;
+
+      // Si tiene continente elegido pero no es similar directo, pedimos al menos alguna señal regional antes de gastar MusicBrainz.
+      if (selectedContinent !== 'all' && candidate.directSimilarity < 0.08 && !regionalTagSignal && !originTagSignal) return null;
+
+      const listenerScore = Math.min(5, Math.log10(listeners + 1));
+      const directScore = candidate.directSimilarity * 60;
+      const tagScore = Math.min(28, soundOverlap * 4.5 + candidate.tagHits * 1.4);
+      const genreScore = selectedGenres.length ? 5 : 0;
+      const preliminaryScore = directScore + tagScore + listenerScore + genreScore;
+
+      return {
+        candidate,
+        info,
+        tags,
+        normalizedTags,
+        listeners,
+        soundOverlap,
+        preliminaryScore,
+        seedProfiles
+      };
+    } catch (e) {
+      console.warn('Candidato descartado:', candidate.name, e);
+      return null;
+    }
+  });
+
+  const prelim = evaluated.filter(Boolean).sort((a, b) => b.preliminaryScore - a.preliminaryScore);
+
+  // Similitud inversa: si B también lista a A como similar, sube la confianza.
+  const reverseCandidates = prelim.slice(0, 32).map(x => x.candidate);
+  await mapLimit(reverseCandidates, 5, c => addReverseSimilarity(c, seedNames));
+
+  const finalResults = [];
+  let originChecks = 0;
+  const MAX_ORIGIN_CHECKS = selectedContinent === 'all' ? 0 : 26;
+
+  for (const item of prelim) {
+    if (finalResults.length >= 10) break;
+
+    const candidate = item.candidate;
+    let origin = { ok: true, label: '', source: '', confidence: 1, strict: true };
+
+    if (selectedContinent !== 'all') {
+      if (originChecks >= MAX_ORIGIN_CHECKS) continue;
+      originChecks += 1;
+      origin = await verifyContinentStrict(candidate, item.info, item.tags);
+      if (!origin.ok) continue;
+    }
+
+    const reverseScore = (candidate.reverseSimilarity || 0) * 34;
+    const directScore = candidate.directSimilarity * 60;
+    const soundScore = Math.min(30, item.soundOverlap * 4.5 + candidate.tagHits * 1.5);
+    const originScore = selectedContinent === 'all' ? 0 : origin.confidence * 15;
+    const listenerScore = Math.min(5, Math.log10(item.listeners + 1));
+    const rankBonus = candidate.directRank <= 20 ? 5 : candidate.directRank <= 60 ? 2 : 0;
+    const totalScore = directScore + reverseScore + soundScore + originScore + listenerScore + rankBonus;
+
+    const img = item.info?.image?.find(i => i.size === 'medium')?.['#text'] || '';
+    const similarTo = candidate.similarTo || artists[0];
+    const listeningSignal = candidate.directSimilarity > 0
+      ? `Quienes escuchan ${similarTo} también suelen escuchar ${item.info.name || candidate.name}`
+      : (candidate.reverseSimilarity > 0 ? `${item.info.name || candidate.name} también aparece cerca de ${artists[0]}` : 'Perfil sonoro parecido por tags');
+
+    const evidence = [];
+    if (candidate.directSimilarity > 0) evidence.push(`afinidad Last.fm ${(candidate.directSimilarity * 100).toFixed(0)}%`);
+    if (candidate.reverseSimilarity > 0) evidence.push(`afinidad inversa ${(candidate.reverseSimilarity * 100).toFixed(0)}%`);
+    if (item.soundOverlap > 0) evidence.push(`${item.soundOverlap} tags en común`);
+    if (origin.label && selectedContinent !== 'all') evidence.push(`origen: ${origin.label}`);
+
+    finalResults.push({
+      name: item.info.name || candidate.name,
+      match: Math.max(35, Math.min(99, Math.round(totalScore))),
+      tags: item.tags.slice(0, 5),
+      listeners: item.listeners,
+      img: img && !img.includes('2a96cbd8') ? img : '',
+      similarTo,
+      url: item.info.url || candidate.url || `https://www.last.fm/music/${encodeURIComponent(candidate.name)}`,
+      origin: origin.label,
+      originSource: origin.source,
+      originStrict: origin.strict,
+      reason: `${listeningSignal}. ${item.soundOverlap ? `Comparte ${item.soundOverlap} tags de sonido con la banda base.` : 'Coincidencia sonora moderada por el grafo de escucha.'}`,
+      evidence
+    });
+  }
+
+  finalResults.sort((a, b) => b.match - a.match || b.listeners - a.listeners);
+
+  if (!finalResults.length && selectedContinent !== 'all') {
+    throw new Error(`No encontré artistas suficientemente parecidos con origen confirmado en ${getContinentName(selectedContinent)}. Es preferible no mostrar resultados antes que traer artistas de otro continente.`);
+  }
+
+  return finalResults.slice(0, 8);
 }
 
 function fmtNum(n) {
-  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M oyentes';
-  if (n >= 1000) return (n/1000).toFixed(0) + 'K oyentes';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M oyentes';
+  if (n >= 1000) return (n / 1000).toFixed(0) + 'K oyentes';
   return n ? n + ' oyentes' : '';
 }
 
 function renderResults(recs) {
-  const grid = document.createElement('div'); grid.className = 'results-grid';
-  recs.forEach((r,i) => {
+  const wrapper = document.createElement('div');
+  const contLabel = getContinentName(selectedContinent);
+  wrapper.innerHTML = `
+    <div class="results-head">
+      <div>
+        <div class="results-title">Recomendaciones</div>
+        <div class="results-note">${selectedContinent === 'all' ? 'Sin filtro regional' : `Filtro estricto: ${escapeHtml(contLabel)}`}</div>
+      </div>
+      <button class="btn-small" onclick="window.scrollTo({top:0, behavior:'smooth'})">Nueva búsqueda</button>
+    </div>`;
+
+  const grid = document.createElement('div');
+  grid.className = 'results-grid';
+
+  recs.forEach((r, i) => {
     const card = document.createElement('div');
-    card.className = 'rec-card'; card.style.animationDelay = `${i*0.06}s`;
+    card.className = 'rec-card';
+    card.style.animationDelay = `${i * 0.055}s`;
     const sq = encodeURIComponent(r.name);
-    const contLabel = CONTINENTS.find(c=>c.id===selectedContinent)?.name || '';
+    const fav = isFavorite(r.name);
+    const saveText = fav ? '✓ Guardado' : '♡ Guardar';
+    const saveClass = fav ? 'sl save saved' : 'sl save';
+
     card.innerHTML = `
-      ${r.img ? `<img class="rec-img" src="${r.img}" alt="${r.name}" onerror="this.style.display='none'">` : ''}
-      <div class="rec-num">${i+1}</div>
+      <div class="rec-media">
+        ${r.img ? `<img class="rec-img" src="${escapeHtml(r.img)}" alt="${escapeHtml(r.name)}" onerror="this.style.display='none'">` : `<div class="rec-img"></div>`}
+        <div class="rec-num">#${i + 1}</div>
+      </div>
       <div class="rec-body">
-        <div class="rec-name">${r.name}</div>
-        <div class="rec-listeners">${fmtNum(r.listeners)}${r.match ? ` &bull; ${r.match}% match` : ''}</div>
-        <div class="rec-tags">${r.tags.map(t=>`<span class="rec-tag">${t}</span>`).join('')}</div>
-        <div class="rec-similar">Similar a: <em>${r.similarTo}</em>${contLabel && selectedContinent!=='all' ? ` &bull; ${contLabel}` : ''}</div>
+        <div class="rec-top">
+          <div>
+            <div class="rec-name">${escapeHtml(r.name)}</div>
+            <div class="rec-listeners">${fmtNum(r.listeners)} · similar a ${escapeHtml(r.similarTo)}</div>
+          </div>
+          <div class="score-pill">${r.match}%</div>
+        </div>
+        <div class="rec-tags">${r.tags.map(t => `<span class="rec-tag">${escapeHtml(t)}</span>`).join('')}</div>
+        <div class="rec-similar">${escapeHtml(r.reason)}</div>
+        <div class="evidence-row">
+          ${(r.evidence || []).map((e, idx) => `<span class="evidence ${idx === 3 || e.startsWith('origen') ? 'ok' : ''}">${escapeHtml(e)}</span>`).join('')}
+          ${selectedContinent !== 'all' && r.originSource ? `<span class="evidence ${r.originStrict ? 'ok' : 'warn'}">${escapeHtml(r.originSource)}</span>` : ''}
+        </div>
         <div class="search-links">
           <a class="sl" href="https://open.spotify.com/search/${sq}" target="_blank">Spotify</a>
-          <a class="sl" href="https://www.youtube.com/results?search_query=${encodeURIComponent(r.name+' música')}" target="_blank">YouTube</a>
-          <a class="sl" href="${r.url}" target="_blank">Last.fm</a>
+          <a class="sl" href="https://www.youtube.com/results?search_query=${encodeURIComponent(r.name + ' música')}" target="_blank">YouTube</a>
+          <a class="sl" href="${escapeHtml(r.url)}" target="_blank">Last.fm</a>
+          <button class="${saveClass}" onclick="toggleFavoriteByName('${encodeURIComponent(r.name)}','${encodeURIComponent(r.url || '')}')">${saveText}</button>
         </div>
       </div>`;
+
     grid.appendChild(card);
   });
-  document.getElementById('results').innerHTML = '';
-  document.getElementById('results').appendChild(grid);
+
+  wrapper.appendChild(grid);
+  const results = document.getElementById('results');
+  results.innerHTML = '';
+  results.appendChild(wrapper);
 }
 
 init();

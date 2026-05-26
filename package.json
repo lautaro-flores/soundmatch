@@ -1,0 +1,17 @@
+{
+  "name": "soundmatch-llm-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "SoundMatch con agente LLM + busqueda web + validacion de continente",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest"
+  }
+}

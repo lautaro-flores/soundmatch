@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SoundMatch LLM Agent</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
+    :root {
+      --bg: #08080d;
+      --panel: rgba(24, 24, 35, 0.82);
+      --panel2: rgba(34, 34, 50, 0.72);
+      --border: rgba(178, 134, 255, 0.18);
+      --text: #f6f3ff;
+      --muted: #9f9bb8;
+      --accent: #b987ff;
+      --accent2: #7dd3fc;
+      --good: #6ee7b7;
+      --bad: #fca5a5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(185,135,255,.20), transparent 35%),
+        radial-gradient(circle at 90% 10%, rgba(125,211,252,.16), transparent 30%),
+        radial-gradient(circle at 50% 100%, rgba(110,231,183,.12), transparent 30%),
+        var(--bg);
+      font-family: 'DM Sans', system-ui, sans-serif;
+    }
+    .app { max-width: 1100px; margin: 0 auto; padding: 36px 18px 56px; }
+    header { display: grid; gap: 10px; text-align: center; margin-bottom: 28px; }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.3rem, 5vw, 4.6rem);
+      font-weight: 800;
+      letter-spacing: -3px;
+      line-height: .9;
+      background: linear-gradient(135deg, var(--accent), var(--accent2), var(--good));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle { color: var(--muted); font-size: 1rem; }
+    .badge { justify-self: center; border: 1px solid rgba(110,231,183,.32); color: var(--good); background: rgba(110,231,183,.08); border-radius: 999px; padding: 7px 12px; font-size: .75rem; letter-spacing: .8px; text-transform: uppercase; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 18px; align-items: start; }
+    @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 24px; padding: 20px; box-shadow: 0 24px 70px rgba(0,0,0,.24); backdrop-filter: blur(12px); }
+    .panel + .panel { margin-top: 16px; }
+    .label { font-family: 'Syne', sans-serif; font-size: .78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+    .search-row { display: flex; gap: 10px; }
+    input {
+      flex: 1;
+      width: 100%;
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px 16px;
+      border-radius: 15px;
+      outline: none;
+      font: inherit;
+    }
+    input:focus { border-color: rgba(185,135,255,.55); box-shadow: 0 0 0 4px rgba(185,135,255,.08); }
+    button {
+      border: 0;
+      border-radius: 15px;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #6d5dfc);
+      padding: 14px 18px;
+      transition: transform .15s, opacity .15s;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 9px; }
+    .choice {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.035);
+      border-radius: 16px;
+      padding: 13px 10px;
+      color: var(--muted);
+      text-align: center;
+      user-select: none;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .choice:hover, .choice.active { border-color: rgba(185,135,255,.55); background: rgba(185,135,255,.12); color: var(--text); }
+    .choice small { display: block; margin-top: 4px; color: var(--muted); font-size: .72rem; }
+    .discover { width: 100%; margin-top: 18px; padding: 17px 20px; font-size: 1rem; }
+    .note { color: var(--muted); font-size: .85rem; line-height: 1.45; margin-top: 12px; }
+    .results { display: grid; gap: 12px; margin-top: 16px; }
+    .card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      animation: rise .25s both;
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .num { font-family: 'Syne'; font-size: 1.8rem; font-weight: 800; color: var(--accent2); min-width: 34px; }
+    .name { font-family: 'Syne'; font-size: 1.2rem; font-weight: 800; margin-bottom: 3px; }
+    .country { color: var(--good); font-size: .78rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .why { color: #d9d6ee; line-height: 1.45; font-size: .92rem; margin-bottom: 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip { color: #c4b5fd; border: 1px solid rgba(196,181,253,.22); background: rgba(196,181,253,.08); border-radius: 999px; padding: 4px 8px; font-size: .72rem; }
+    .evidence { color: var(--muted); font-size: .82rem; line-height: 1.4; }
+    .score { text-align: right; min-width: 82px; }
+    .score strong { display: block; font-family: 'Syne'; font-size: 1.6rem; color: var(--good); }
+    .links { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .links a { color: var(--muted); text-decoration: none; border: 1px solid var(--border); border-radius: 999px; padding: 5px 9px; font-size: .76rem; }
+    .links a:hover { color: var(--text); border-color: rgba(255,255,255,.28); }
+    .side-list { display: grid; gap: 8px; }
+    .side-item { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 10px 12px; background: rgba(255,255,255,.035); border: 1px solid var(--border); border-radius: 14px; color: var(--muted); font-size: .85rem; }
+    .side-item button { padding: 4px 8px; font-size: .7rem; border-radius: 999px; background: rgba(255,255,255,.08); color: var(--muted); }
+    .empty, .error, .loading { padding: 20px; background: rgba(255,255,255,.035); border: 1px solid var(--border); border-radius: 18px; color: var(--muted); line-height: 1.5; }
+    .error { border-color: rgba(252,165,165,.35); color: var(--bad); background: rgba(252,165,165,.08); }
+    .sources a { display: block; color: var(--muted); text-decoration: none; font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 0; }
+    .sources a:hover { color: var(--text); }
+    .heart { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--border); padding: 8px 10px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">SoundMatch</div>
+      <div class="subtitle">Recomendaciones con LLM + búsqueda web + validación de continente</div>
+      <div class="badge">Sin base propia · con evidencia</div>
+    </header>
+
+    <div class="layout">
+      <main>
+        <section class="panel">
+          <div class="label">1. Banda o artista base</div>
+          <div class="search-row">
+            <input id="artist" placeholder="Ej: Winona Riders, Radiohead, Soda Stereo..." autocomplete="off" />
+            <button id="searchBtn">Buscar</button>
+          </div>
+          <div class="note">El motor busca señales públicas: artistas similares, escucha cruzada, escenas, reseñas y origen geográfico.</div>
+        </section>
+
+        <section class="panel">
+          <div class="label">2. Continente</div>
+          <div class="grid" id="continents"></div>
+        </section>
+
+        <section class="panel">
+          <div class="label">3. Precisión</div>
+          <div class="grid" id="precision"></div>
+          <button class="discover" id="discoverBtn">Descubrir música ✦</button>
+        </section>
+
+        <div id="results" class="results"></div>
+      </main>
+
+      <aside>
+        <section class="panel">
+          <div class="label">Favoritos</div>
+          <div class="side-list" id="favorites"></div>
+        </section>
+        <section class="panel">
+          <div class="label">Historial</div>
+          <div class="side-list" id="history"></div>
+        </section>
+        <section class="panel">
+          <div class="label">Fuentes del agente</div>
+          <div class="sources" id="sources"><span class="note">Las fuentes aparecen después de buscar.</span></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+<script>
+const CONTINENTS = [
+  ['europe', '🇪🇺 Europa'],
+  ['latam', '🌎 Latinoamérica'],
+  ['northamerica', '🗽 Norteamérica'],
+  ['africa', '🌍 África'],
+  ['asia', '🌏 Asia'],
+  ['oceania', '🦘 Oceanía'],
+  ['middleeast', '🕌 Medio Oriente'],
+  ['all', '🌐 Todo el mundo']
+];
+const PRECISION = [
+  ['strict', 'Alta', 'descarta si no valida origen'],
+  ['balanced', 'Media', 'recomendada'],
+  ['exploratory', 'Explorar', 'más variedad']
+];
+let selectedContinent = 'europe';
+let selectedPrecision = 'balanced';
+
+const $ = sel => document.querySelector(sel);
+
+function storageGet(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+}
+function storageSet(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+
+function renderChoices() {
+  $('#continents').innerHTML = CONTINENTS.map(([id, label]) => `<div class="choice ${id === selectedContinent ? 'active' : ''}" data-continent="${id}">${label}</div>`).join('');
+  $('#precision').innerHTML = PRECISION.map(([id, label, sub]) => `<div class="choice ${id === selectedPrecision ? 'active' : ''}" data-precision="${id}">${label}<small>${sub}</small></div>`).join('');
+
+  document.querySelectorAll('[data-continent]').forEach(el => el.onclick = () => { selectedContinent = el.dataset.continent; renderChoices(); });
+  document.querySelectorAll('[data-precision]').forEach(el => el.onclick = () => { selectedPrecision = el.dataset.precision; renderChoices(); });
+}
+
+function renderSideLists() {
+  const favs = storageGet('soundmatch_favorites');
+  const hist = storageGet('soundmatch_history');
+  $('#favorites').innerHTML = favs.length ? favs.map(x => `<div class="side-item"><span>${x}</span><button onclick="removeFavorite('${encodeURIComponent(x)}')">×</button></div>`).join('') : '<div class="empty">Todavía no guardaste favoritos.</div>';
+  $('#history').innerHTML = hist.length ? hist.map(x => `<div class="side-item"><span>${x.artist} · ${x.continent}</span><button onclick="repeatSearch('${encodeURIComponent(x.artist)}','${x.continent}')">usar</button></div>`).join('') : '<div class="empty">Sin búsquedas todavía.</div>';
+}
+
+function addFavorite(name) {
+  const favs = storageGet('soundmatch_favorites');
+  if (!favs.includes(name)) favs.unshift(name);
+  storageSet('soundmatch_favorites', favs.slice(0, 30));
+  renderSideLists();
+}
+function removeFavorite(encoded) {
+  const name = decodeURIComponent(encoded);
+  storageSet('soundmatch_favorites', storageGet('soundmatch_favorites').filter(x => x !== name));
+  renderSideLists();
+}
+function repeatSearch(encoded, continent) {
+  $('#artist').value = decodeURIComponent(encoded);
+  selectedContinent = continent;
+  renderChoices();
+  go();
+}
+function addHistory(artist, continent) {
+  const hist = storageGet('soundmatch_history').filter(x => !(x.artist === artist && x.continent === continent));
+  hist.unshift({ artist, continent, date: new Date().toISOString() });
+  storageSet('soundmatch_history', hist.slice(0, 20));
+  renderSideLists();
+}
+
+function renderSources(sources) {
+  if (!sources?.length) {
+    $('#sources').innerHTML = '<span class="note">No se recibieron fuentes de grounding.</span>';
+    return;
+  }
+  $('#sources').innerHTML = sources.slice(0, 10).map(s => `<a href="${s.url}" target="_blank" title="${s.title || s.url}">${s.index}. ${s.title || s.url}</a>`).join('');
+}
+
+function renderResults(data) {
+  renderSources(data.sources || []);
+  if (!data.recommendations?.length) {
+    $('#results').innerHTML = `<div class="empty">No encontré recomendaciones con evidencia suficiente para ese continente. Probá con precisión “Media” o “Explorar”.</div>`;
+    return;
+  }
+  $('#results').innerHTML = data.recommendations.map((r, i) => `
+    <article class="card" style="animation-delay:${i * 0.04}s">
+      <div class="num">${i + 1}</div>
+      <div>
+        <div class="name">${r.name}</div>
+        <div class="country">${r.country || 'origen sin mostrar'} · ${r.continent || data.continent}</div>
+        <div class="chips">${(r.sound_signal || []).slice(0, 5).map(t => `<span class="chip">${t}</span>`).join('')}</div>
+        <div class="why">${r.why || ''}</div>
+        <div class="evidence"><strong>Fans/afinidad:</strong> ${r.fan_signal || 'Sin detalle'}<br><strong>Origen:</strong> ${r.origin_signal || r.validation_note || 'Sin detalle'}</div>
+        <div class="links">
+          <a href="${r.links?.spotify || '#'}" target="_blank">Spotify</a>
+          <a href="${r.links?.youtube || '#'}" target="_blank">YouTube</a>
+          <a href="${r.links?.lastfm || '#'}" target="_blank">Last.fm</a>
+        </div>
+      </div>
+      <div class="score">
+        <button class="heart" onclick="addFavorite('${String(r.name).replace(/'/g, "\\'")}')">♡</button>
+        <strong>${Math.round(r.similarity_score || 0)}</strong>
+        <span class="note">match</span>
+      </div>
+    </article>
+  `).join('');
+}
+
+async function go() {
+  const artist = $('#artist').value.trim();
+  if (!artist) {
+    $('#results').innerHTML = '<div class="error">Ingresá una banda o artista.</div>';
+    return;
+  }
+  $('#discoverBtn').disabled = true;
+  $('#searchBtn').disabled = true;
+  $('#discoverBtn').textContent = 'Buscando con LLM...';
+  $('#results').innerHTML = '<div class="loading">El agente está buscando artistas parecidos, validando origen y uniendo evidencia pública. Esto puede tardar unos segundos.</div>';
+  $('#sources').innerHTML = '<span class="note">Buscando fuentes...</span>';
+
+  try {
+    const res = await fetch('/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ artist, continent: selectedContinent, precision: selectedPrecision })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al buscar recomendaciones.');
+    addHistory(artist, selectedContinent);
+    renderResults(data);
+  } catch (err) {
+    $('#results').innerHTML = `<div class="error">${err.message}</div>`;
+  } finally {
+    $('#discoverBtn').disabled = false;
+    $('#searchBtn').disabled = false;
+    $('#discoverBtn').textContent = 'Descubrir música ✦';
+  }
+}
+
+$('#discoverBtn').onclick = go;
+$('#searchBtn').onclick = go;
+$('#artist').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+renderChoices();
+renderSideLists();
+</script>
+</body>
+</html>

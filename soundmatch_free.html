@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --accent: #c084fc; --accent2: #818cf8; --accent3: #34d399;
+    --text: #f1f0ff; --muted: #8b8aad; --border: rgba(192,132,252,0.15);
+    --card-bg: rgba(28,28,39,0.85);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .bg-orbs { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.1; }
+  .orb1 { width: 400px; height: 400px; background: #c084fc; top: -80px; left: -80px; animation: f1 8s ease-in-out infinite; }
+  .orb2 { width: 350px; height: 350px; background: #818cf8; bottom: -60px; right: -60px; animation: f2 10s ease-in-out infinite; }
+  .orb3 { width: 250px; height: 250px; background: #34d399; top: 50%; left: 50%; animation: f3 12s ease-in-out infinite; }
+  @keyframes f1{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,15px)}}
+  @keyframes f2{0%,100%{transform:translate(0,0)}50%{transform:translate(-15px,20px)}}
+  @keyframes f3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-48%,-52%)}}
+  .app { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  header { text-align: center; margin-bottom: 2.5rem; }
+  .logo { font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -1px; margin-bottom: 0.4rem; }
+  .tagline { color: var(--muted); font-size: 0.9rem; }
+  .badge-free { display: inline-block; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); border-radius: 50px; padding: 0.2rem 0.8rem; font-size: 0.72rem; color: #6ee7b7; letter-spacing: 1px; text-transform: uppercase; margin-top: 0.5rem; }
+  .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .panel-title { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
+  .input-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .input-wrap { flex: 1; min-width: 180px; }
+  input[type="text"] { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--muted); }
+  .btn-add { background: rgba(192,132,252,0.12); border: 1px solid rgba(192,132,252,0.3); border-radius: 10px; color: var(--accent); font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; padding: 0.75rem 1.2rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .btn-add:hover { background: rgba(192,132,252,0.22); }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+  .tag { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.25); border-radius: 50px; padding: 0.3rem 0.75rem; font-size: 0.82rem; color: #a5b4fc; animation: popIn 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes popIn{from{transform:scale(0.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .tag-remove { background: none; border: none; color: #6b7280; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1; transition: color 0.15s; }
+  .tag-remove:hover { color: #f87171; }
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .chip { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 50px; padding: 0.35rem 0.9rem; font-size: 0.8rem; color: var(--muted); cursor: pointer; transition: all 0.18s; user-select: none; }
+  .chip:hover { border-color: var(--accent2); color: #a5b4fc; }
+  .chip.active { background: rgba(129,140,248,0.15); border-color: rgba(129,140,248,0.4); color: #c7d2fe; }
+  .chip.mood-chip:hover { border-color: var(--accent3); color: #6ee7b7; }
+  .chip.mood-chip.active { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.35); color: #6ee7b7; }
+  .continent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.5rem; margin-top: 0.5rem; }
+  .cont-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.5rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .cont-btn:hover { border-color: rgba(192,132,252,0.35); background: rgba(192,132,252,0.06); }
+  .cont-btn.active { background: rgba(192,132,252,0.12); border-color: rgba(192,132,252,0.45); }
+  .cont-flag { font-size: 1.5rem; display: block; margin-bottom: 0.25rem; }
+  .cont-name { font-size: 0.78rem; color: var(--muted); }
+  .cont-btn.active .cont-name { color: var(--accent); font-weight: 500; }
+  .section-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem; display: block; }
+  .btn-discover { width: 100%; margin-top: 1.25rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 13px; color: #fff; font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; padding: 1rem; cursor: pointer; transition: all 0.25s; }
+  .btn-discover:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(192,132,252,0.35); }
+  .btn-discover:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .loading { text-align: center; padding: 2.5rem; }
+  .wave { display: inline-flex; align-items: flex-end; gap: 3px; height: 28px; margin-bottom: 0.75rem; }
+  .wave span { display: block; width: 4px; border-radius: 4px; background: linear-gradient(to top, var(--accent), var(--accent2)); animation: wv 1.2s ease-in-out infinite; }
+  .wave span:nth-child(1){height:8px;animation-delay:0s} .wave span:nth-child(2){height:18px;animation-delay:0.1s} .wave span:nth-child(3){height:28px;animation-delay:0.2s} .wave span:nth-child(4){height:18px;animation-delay:0.3s} .wave span:nth-child(5){height:8px;animation-delay:0.4s} .wave span:nth-child(6){height:16px;animation-delay:0.5s} .wave span:nth-child(7){height:24px;animation-delay:0.15s}
+  @keyframes wv{0%,100%{transform:scaleY(0.3)}50%{transform:scaleY(1)}}
+  .loading p { color: var(--muted); font-size: 0.88rem; }
+  .results-grid { display: grid; gap: 0.9rem; }
+  .rec-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.4rem; display: flex; gap: 1rem; align-items: flex-start; transition: border-color 0.2s, transform 0.2s; animation: slideIn 0.3s cubic-bezier(0.34,1.2,0.64,1) both; }
+  .rec-card:hover { border-color: rgba(192,132,252,0.3); transform: translateX(3px); }
+  @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+  .rec-num { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; min-width: 1.8rem; line-height: 1; text-align: center; }
+  .rec-img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: rgba(129,140,248,0.1); }
+  .rec-body { flex: 1; }
+  .rec-name { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 0.15rem; }
+  .rec-listeners { font-size: 0.73rem; color: var(--accent3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+  .rec-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.5rem; }
+  .rec-tag { font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 50px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.18); color: #6ee7b7; }
+  .rec-similar { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+  .search-links { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .sl { font-size: 0.72rem; padding: 0.25rem 0.65rem; border-radius: 50px; text-decoration: none; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); transition: all 0.15s; }
+  .sl:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+  .error-msg { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 12px; padding: 1rem 1.25rem; color: #fca5a5; font-size: 0.85rem; line-height: 1.5; }
+  .powered { text-align: center; margin-top: 2.5rem; color: var(--muted); font-size: 0.78rem; }
+  .powered a { color: var(--accent2); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="bg-orbs"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+
+<div class="app">
+  <header>
+    <div class="logo">♫ SoundMatch</div>
+    <p class="tagline">Descubrí nueva música basada en lo que ya amás</p>
+    <div class="badge-free">✦ 100% gratuito — sin registro</div>
+  </header>
+
+  <div class="panel">
+    <div class="panel-title">Tus artistas o bandas favoritas</div>
+    <div class="input-row">
+      <div class="input-wrap">
+        <input type="text" id="artistInput" placeholder="Ej: Radiohead, Soda Stereo, Billie Eilish..." maxlength="60">
+      </div>
+      <button class="btn-add" onclick="addTag()">+ Agregar</button>
+    </div>
+    <div class="tags" id="tagContainer"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">¿De qué parte del mundo querés descubrir música?</div>
+    <span class="section-label">Elegí un continente (opcional)</span>
+    <div class="continent-grid" id="continentGrid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Géneros y mood</div>
+    <span class="section-label">Géneros (hasta 3)</span>
+    <div class="chip-grid" id="genreGrid"></div>
+    <br>
+    <span class="section-label">Estado de ánimo</span>
+    <div class="chip-grid" id="moodGrid"></div>
+  </div>
+
+  <button class="btn-discover" id="discoverBtn" onclick="go()">Descubrir música ✦</button>
+  <div id="results" style="margin-top:1.25rem"></div>
+
+  <div class="powered">Datos via <a href="https://last.fm" target="_blank">Last.fm API</a> &mdash; SoundMatch • 100% gratis</div>
+</div>
+
+<script>
+// Last.fm API key — gratuita, registrada en last.fm
+// Para producción: registrá tu propia en https://www.last.fm/api/account/create
+const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026'; // demo key pública
+
+const CONTINENTS = [
+  { id:'all', flag:'🌍', name:'Todo el mundo' },
+  { id:'latam', flag:'🌎', name:'Latinoamérica' },
+  { id:'europe', flag:'🇪🇺', name:'Europa' },
+  { id:'northamerica', flag:'🗽', name:'Norteamérica' },
+  { id:'africa', flag:'🌍', name:'África' },
+  { id:'asia', flag:'🌏', name:'Asia' },
+  { id:'oceania', flag:'🦘', name:'Oceanía' },
+  { id:'middleeast', flag:'🕌', name:'Medio Oriente' },
+];
+
+// Palabras clave por continente para filtrar tags/géneros en Last.fm
+const CONTINENT_TAGS = {
+  latam: ['latin','cumbia','reggaeton','bossa nova','tango','samba','salsa','latin rock','latin pop','musica brasileira','tropical','ska','rock en español','mexican','colombian','argentinian','brazilian','chilean'],
+  europe: ['british','uk','french','german','swedish','norwegian','scandinavian','italian','spanish','european','celtic','britpop','krautrock','cold wave','neue deutsche welle'],
+  northamerica: ['american','usa','canadian','country','blues','hip hop','r&b','new york','los angeles','nashville','chicago blues'],
+  africa: ['afrobeat','afropop','amapiano','kwaito','highlife','afro','south african','nigerian','ghanaian','african'],
+  asia: ['j-pop','j-rock','k-pop','k-indie','mandopop','bollywood','japanese','korean','chinese','thai','vietnamese','anime','city pop'],
+  oceania: ['australian','new zealand','indie pop','surf'],
+  middleeast: ['arabic','persian','turkish','israeli','middle eastern','oud','oriental'],
+  all: [],
+};
+
+const GENRES = ['Rock','Pop','Electrónica','Hip-Hop','Jazz','Metal','Indie','Folk','R&B','Cumbia','Reggae','Clásica','Blues','Punk','Bossa Nova','K-Pop','J-Pop','Afrobeat'];
+const MOODS = ['🌙 Nocturna','☀️ Energizante','😌 Relajante','💔 Melancólica','🎉 Festiva','🔥 Intensa','🌿 Tranquila'];
+const MOOD_TAGS = {
+  '🌙 Nocturna':['dark','melancholic','nocturnal','post-punk','goth'],
+  '☀️ Energizante':['energetic','upbeat','dance','power pop','workout'],
+  '😌 Relajante':['chill','ambient','lo-fi','acoustic','calm'],
+  '💔 Melancólica':['sad','emotional','melancholy','emo','heartbreak'],
+  '🎉 Festiva':['party','dance','upbeat','funk','fiesta'],
+  '🔥 Intensa':['intense','aggressive','heavy','epic','metal'],
+  '🌿 Tranquila':['peaceful','acoustic','folk','soft','mellow'],
+};
+
+let artists = [], selectedContinent = 'all', selectedGenres = [], selectedMood = '';
+
+function init() {
+  const cg = document.getElementById('continentGrid');
+  CONTINENTS.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'cont-btn' + (c.id === 'all' ? ' active' : '');
+    div.dataset.id = c.id;
+    div.innerHTML = `<span class="cont-flag">${c.flag}</span><span class="cont-name">${c.name}</span>`;
+    div.onclick = () => selectContinent(c.id);
+    cg.appendChild(div);
+  });
+
+  const gg = document.getElementById('genreGrid');
+  GENRES.forEach(g => {
+    const el = document.createElement('div'); el.className = 'chip'; el.textContent = g;
+    el.onclick = () => toggleChip(g, el, selectedGenres, 3);
+    gg.appendChild(el);
+  });
+
+  const mg = document.getElementById('moodGrid');
+  MOODS.forEach(m => {
+    const el = document.createElement('div'); el.className = 'chip mood-chip'; el.textContent = m;
+    el.onclick = () => {
+      document.querySelectorAll('.mood-chip').forEach(b => b.classList.remove('active'));
+      if (selectedMood === m) { selectedMood = ''; return; }
+      selectedMood = m; el.classList.add('active');
+    };
+    mg.appendChild(el);
+  });
+}
+
+function selectContinent(id) {
+  selectedContinent = id;
+  document.querySelectorAll('.cont-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+}
+
+function toggleChip(val, el, arr, max) {
+  if (arr.includes(val)) { arr.splice(arr.indexOf(val),1); el.classList.remove('active'); }
+  else if (arr.length < max) { arr.push(val); el.classList.add('active'); }
+}
+
+function addTag() {
+  const inp = document.getElementById('artistInput');
+  const v = inp.value.trim();
+  if (!v || artists.includes(v) || artists.length >= 6) return;
+  artists.push(v); renderTags(); inp.value = ''; inp.focus();
+}
+
+function removeTag(i) { artists.splice(i,1); renderTags(); }
+
+function renderTags() {
+  const c = document.getElementById('tagContainer'); c.innerHTML = '';
+  artists.forEach((a,i) => {
+    const d = document.createElement('div'); d.className = 'tag';
+    d.innerHTML = `<span>${a}</span><button class="tag-remove" onclick="removeTag(${i})">×</button>`;
+    c.appendChild(d);
+  });
+}
+
+document.getElementById('artistInput').addEventListener('keydown', e => { if (e.key==='Enter') addTag(); });
+
+async function go() {
+  if (!artists.length) {
+    document.getElementById('results').innerHTML = `<div class="error-msg">👆 Agregá al menos un artista favorito.</div>`;
+    return;
+  }
+  const btn = document.getElementById('discoverBtn');
+  btn.disabled = true; btn.textContent = 'Buscando...';
+  document.getElementById('results').innerHTML = `<div class="loading"><div class="wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><p>Buscando artistas similares en Last.fm...</p></div>`;
+
+  try {
+    const all = await fetchSimilar();
+    if (!all.length) throw new Error('No se encontraron artistas similares. Probá con otros nombres.');
+    renderResults(all);
+  } catch(e) {
+    document.getElementById('results').innerHTML = `<div class="error-msg">⚠️ ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Descubrir música ✦';
+  }
+}
+
+async function fetchSimilar() {
+  const seen = new Set(artists.map(a => a.toLowerCase()));
+  const results = [];
+
+  for (const artist of artists) {
+    try {
+      const url = `https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=${encodeURIComponent(artist)}&api_key=${LASTFM_KEY}&limit=30&format=json`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const list = data?.similarartists?.artist || [];
+
+      for (const a of list) {
+        if (seen.has(a.name.toLowerCase())) continue;
+
+        // Fetch artist info for tags
+        const infoUrl = `https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(a.name)}&api_key=${LASTFM_KEY}&format=json`;
+        const infoRes = await fetch(infoUrl);
+        const info = await infoRes.json();
+        const artistInfo = info?.artist;
+        const tags = (artistInfo?.tags?.tag || []).map(t => t.name.toLowerCase());
+        const listeners = parseInt(artistInfo?.stats?.listeners || 0);
+
+        // Filter by continent
+        if (selectedContinent !== 'all') {
+          const contTags = CONTINENT_TAGS[selectedContinent] || [];
+          const matches = contTags.some(ct => tags.some(t => t.includes(ct) || ct.includes(t)));
+          if (!matches) continue;
+        }
+
+        // Filter by genre
+        if (selectedGenres.length) {
+          const gMatch = selectedGenres.some(g => tags.some(t => t.includes(g.toLowerCase()) || g.toLowerCase().includes(t)));
+          if (!gMatch) continue;
+        }
+
+        // Filter by mood
+        if (selectedMood) {
+          const mTags = MOOD_TAGS[selectedMood] || [];
+          const mMatch = mTags.some(mt => tags.some(t => t.includes(mt) || mt.includes(t)));
+          if (!mMatch) continue;
+        }
+
+        if (!seen.has(a.name.toLowerCase())) {
+          seen.add(a.name.toLowerCase());
+          const img = artistInfo?.image?.find(i=>i.size==='medium')?.['#text'] || '';
+          results.push({
+            name: a.name,
+            match: Math.round(parseFloat(a.match || 0) * 100),
+            tags: (artistInfo?.tags?.tag || []).slice(0,4).map(t=>t.name),
+            listeners,
+            img: img && !img.includes('2a96cbd8') ? img : '',
+            similarTo: artist,
+            url: a.url,
+          });
+        }
+        if (results.length >= 12) break;
+      }
+      if (results.length >= 12) break;
+    } catch(e) { console.warn(e); }
+  }
+
+  // Sort by listeners desc, take top 8
+  return results.sort((a,b) => b.listeners - a.listeners).slice(0,8);
+}
+
+function fmtNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M oyentes';
+  if (n >= 1000) return (n/1000).toFixed(0) + 'K oyentes';
+  return n ? n + ' oyentes' : '';
+}
+
+function renderResults(recs) {
+  const grid = document.createElement('div'); grid.className = 'results-grid';
+  recs.forEach((r,i) => {
+    const card = document.createElement('div');
+    card.className = 'rec-card'; card.style.animationDelay = `${i*0.06}s`;
+    const sq = encodeURIComponent(r.name);
+    const contLabel = CONTINENTS.find(c=>c.id===selectedContinent)?.name || '';
+    card.innerHTML = `
+      ${r.img ? `<img class="rec-img" src="${r.img}" alt="${r.name}" onerror="this.style.display='none'">` : ''}
+      <div class="rec-num">${i+1}</div>
+      <div class="rec-body">
+        <div class="rec-name">${r.name}</div>
+        <div class="rec-listeners">${fmtNum(r.listeners)}${r.match ? ` &bull; ${r.match}% match` : ''}</div>
+        <div class="rec-tags">${r.tags.map(t=>`<span class="rec-tag">${t}</span>`).join('')}</div>
+        <div class="rec-similar">Similar a: <em>${r.similarTo}</em>${contLabel && selectedContinent!=='all' ? ` &bull; ${contLabel}` : ''}</div>
+        <div class="search-links">
+          <a class="sl" href="https://open.spotify.com/search/${sq}" target="_blank">Spotify</a>
+          <a class="sl" href="https://www.youtube.com/results?search_query=${encodeURIComponent(r.name+' música')}" target="_blank">YouTube</a>
+          <a class="sl" href="${r.url}" target="_blank">Last.fm</a>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('results').appendChild(grid);
+}
+
+init();
+</script>
+</body>
+</html>

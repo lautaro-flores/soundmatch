@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SoundMatch — Recomendador gratuito</title>
+<title>SoundMatch — Recomendador gratuito preciso</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -86,10 +86,13 @@
   .btn-discover { width: 100%; margin-top: 1rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 18px; color: #fff; font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; padding: 1.08rem; cursor: pointer; transition: all 0.25s; box-shadow: 0 18px 40px rgba(129,140,248,.18); }
   .btn-discover:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(192,132,252,0.35); }
   .btn-discover:disabled { opacity: 0.56; cursor: not-allowed; transform: none; box-shadow: none; }
-  .quality-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; margin-top: .8rem; }
-  .quality { background: rgba(255,255,255,.045); border:1px solid var(--border); border-radius: 16px; padding: .8rem; }
-  .quality b { display:block; font-size:.86rem; color: var(--text); margin-bottom:.22rem; }
-  .quality span { color: var(--muted); font-size:.74rem; line-height:1.3; }
+  .quality-grid, .precision-grid { display: grid; grid-template-columns: 1fr; gap: .65rem; margin-top: .8rem; }
+  .quality, .precision-card { background: rgba(255,255,255,.045); border:1px solid var(--border); border-radius: 16px; padding: .8rem; cursor:pointer; transition:.18s; text-align:left; }
+  .quality b, .precision-card b { display:block; font-size:.86rem; color: var(--text); margin-bottom:.22rem; }
+  .quality span, .precision-card span { color: var(--muted); font-size:.74rem; line-height:1.3; }
+  .precision-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+  .precision-card.active { background: rgba(52,211,153,.10); border-color: rgba(52,211,153,.35); }
+  .precision-card.active b { color:#86efac; }
   .aside-actions { display:flex; justify-content:space-between; align-items:center; gap:.5rem; margin-bottom:.5rem; }
   .empty-note { color: var(--muted2); font-size: .82rem; line-height:1.45; padding: .55rem 0; }
   .fav-chip, .history-chip { display:inline-flex; align-items:center; gap:.4rem; padding:.42rem .65rem; border-radius:999px; background:rgba(255,255,255,.045); border:1px solid var(--border); color:#dbeafe; font-size:.8rem; cursor:pointer; transition:.18s; }
@@ -168,7 +171,7 @@
     <div class="hero-inner">
       <div class="panel">
         <div class="panel-title">Buscar por banda + continente</div>
-        <p class="panel-sub">Escribí una o varias bandas. El motor prioriza artistas que aparecen como similares en Last.fm y después valida el origen con MusicBrainz.</p>
+        <p class="panel-sub">Escribí una o varias bandas. El motor prioriza “quien escucha A también escucha B”, compara el sonido por tags y después valida el origen con MusicBrainz.</p>
         <div class="input-row">
           <div class="input-wrap">
             <input type="text" id="artistInput" placeholder="Ej: Radiohead, Soda Stereo, Molchat Doma..." maxlength="80" autocomplete="off">
@@ -180,12 +183,9 @@
       </div>
 
       <div class="panel">
-        <div class="panel-title">Modo precisión</div>
-        <div class="quality-grid">
-          <div class="quality"><b>👥 Afinidad</b><span>“Quien escucha A también escucha B”.</span></div>
-          <div class="quality"><b>🎧 Sonido</b><span>Tags compartidos entre banda base y candidato.</span></div>
-          <div class="quality"><b>🌍 Origen</b><span>País validado antes de mostrar resultados.</span></div>
-        </div>
+        <div class="panel-title">Nivel de precisión</div>
+        <p class="panel-sub">Por defecto usa precisión alta: si el país no se puede validar, no muestra el artista.</p>
+        <div class="precision-grid" id="precisionGrid"></div>
       </div>
     </div>
   </section>
@@ -198,11 +198,6 @@
         <div class="continent-grid" id="continentGrid"></div>
       </div>
 
-      <div class="panel">
-        <div class="panel-title">Géneros opcionales</div>
-        <span class="section-label">Usalos solo si querés acotar más el sonido. Máximo 3.</span>
-        <div class="chip-grid" id="genreGrid"></div>
-      </div>
 
       <div id="results"></div>
     </main>
@@ -227,7 +222,7 @@
       </div>
 
       <div class="tip-box">
-        <b>Tip para que acierte más:</b> usá una banda lo más específica posible. “Radiohead” funciona mejor que “rock”, y elegir pocos géneros evita filtrar candidatos buenos.
+        <b>Tip para que acierte más:</b> usá una banda lo más específica posible. “Soda Stereo” funciona mejor que “rock argentino”. Si el continente falla, dejá el modo en “Alta”.
       </div>
     </aside>
   </div>
@@ -241,8 +236,8 @@
 const LASTFM_KEY = 'b25b959554ed76058ac220b7b2e0a026'; // demo key pública
 
 const STORAGE_KEYS = {
-  favorites: 'soundmatch:favorites:v3',
-  history: 'soundmatch:history:v3'
+  favorites: 'soundmatch:favorites:v4',
+  history: 'soundmatch:history:v4'
 };
 
 const CONTINENTS = [
@@ -290,31 +285,15 @@ const CONTINENT_COUNTRIES = {
   middleeast: ['AM','AZ','BH','CY','EG','GE','IR','IQ','IL','JO','KW','LB','OM','PS','QA','SA','SY','TR','AE','YE']
 };
 
-const GENRES = ['Rock','Pop','Electrónica','Hip-Hop','Jazz','Metal','Indie','Folk','R&B','Cumbia','Reggae','Clásica','Blues','Punk','Bossa Nova','K-Pop','J-Pop','Afrobeat'];
-const GENRE_ALIASES = {
-  'Rock': ['rock','alternative rock','indie rock','post rock','psychedelic rock','latin rock','garage rock'],
-  'Pop': ['pop','synthpop','indie pop','latin pop','dream pop','art pop'],
-  'Electrónica': ['electronic','electronica','electrónica','edm','techno','house','ambient','idm','downtempo','trip hop'],
-  'Hip-Hop': ['hip hop','hip-hop','rap','trap','boom bap'],
-  'Jazz': ['jazz','nu jazz','latin jazz','jazz fusion'],
-  'Metal': ['metal','heavy metal','black metal','death metal','progressive metal','doom metal'],
-  'Indie': ['indie','indie rock','indie pop','alternative','lo-fi'],
-  'Folk': ['folk','folk rock','singer-songwriter','acoustic','americana'],
-  'R&B': ['r&b','rnb','soul','neo soul','funk'],
-  'Cumbia': ['cumbia','cumbia villera','tropical'],
-  'Reggae': ['reggae','dub','ska','rocksteady'],
-  'Clásica': ['classical','clasica','clásica','orchestral','composer'],
-  'Blues': ['blues','chicago blues','delta blues'],
-  'Punk': ['punk','post-punk','hardcore punk','new wave'],
-  'Bossa Nova': ['bossa nova','mpb','musica brasileira','música brasileira'],
-  'K-Pop': ['k-pop','kpop','korean pop'],
-  'J-Pop': ['j-pop','jpop','japanese pop'],
-  'Afrobeat': ['afrobeat','afropop','afro pop','afro-funk']
-};
+const PRECISION_MODES = [
+  { id: 'strict', icon: '🎯', name: 'Alta', desc: 'Solo muestra artistas con país validado por MusicBrainz. Es la mejor opción para acertar el continente.' },
+  { id: 'balanced', icon: '⚖️', name: 'Media', desc: 'Acepta MusicBrainz o tags nacionales muy claros si falta el país.' },
+  { id: 'explore', icon: '🧭', name: 'Explorar', desc: 'Permite algunos artistas con señal regional fuerte, pero los marca como no confirmados.' }
+];
 
 let artists = [];
 let selectedContinent = 'all';
-let selectedGenres = [];
+let precisionMode = 'strict';
 let favorites = loadJson(STORAGE_KEYS.favorites, []);
 let historyItems = loadJson(STORAGE_KEYS.history, []);
 let lastResults = [];
@@ -325,7 +304,7 @@ let lastMusicBrainzRequestAt = 0;
 
 function init() {
   renderContinents();
-  renderGenres();
+  renderPrecision();
   renderTags();
   renderFavorites();
   renderHistory();
@@ -347,16 +326,21 @@ function renderContinents() {
   });
 }
 
-function renderGenres() {
-  const gg = document.getElementById('genreGrid');
-  gg.innerHTML = '';
-  GENRES.forEach(g => {
-    const el = document.createElement('div');
-    el.className = 'chip' + (selectedGenres.includes(g) ? ' active' : '');
-    el.textContent = g;
-    el.onclick = () => toggleChip(g, el, selectedGenres, 3);
-    gg.appendChild(el);
+function renderPrecision() {
+  const grid = document.getElementById('precisionGrid');
+  grid.innerHTML = '';
+  PRECISION_MODES.forEach(mode => {
+    const btn = document.createElement('button');
+    btn.className = 'precision-card' + (precisionMode === mode.id ? ' active' : '');
+    btn.onclick = () => selectPrecision(mode.id);
+    btn.innerHTML = `<b>${mode.icon} ${escapeHtml(mode.name)}</b><span>${escapeHtml(mode.desc)}</span>`;
+    grid.appendChild(btn);
   });
+}
+
+function selectPrecision(id) {
+  precisionMode = id;
+  renderPrecision();
 }
 
 function selectContinent(id) {
@@ -440,7 +424,7 @@ async function go() {
 
   try {
     const all = await fetchSimilar();
-    if (!all.length) throw new Error('No se encontraron artistas con suficiente parecido y origen confiable. Probá con otra banda o sacá géneros.');
+    if (!all.length) throw new Error('No se encontraron artistas con suficiente parecido y origen confiable. Probá con otra banda o usá precisión media/explorar.');
     lastResults = all;
     saveSearch();
     renderResults(all);
@@ -469,11 +453,11 @@ function saveSearch() {
   const item = {
     artists: [...artists],
     continent: selectedContinent,
-    genres: [...selectedGenres],
+    precision: precisionMode,
     ts: Date.now()
   };
-  const signature = JSON.stringify({ artists: item.artists.map(normalizeText), continent: item.continent, genres: item.genres });
-  historyItems = historyItems.filter(h => JSON.stringify({ artists: (h.artists || []).map(normalizeText), continent: h.continent, genres: h.genres || [] }) !== signature);
+  const signature = JSON.stringify({ artists: item.artists.map(normalizeText), continent: item.continent, precision: item.precision });
+  historyItems = historyItems.filter(h => JSON.stringify({ artists: (h.artists || []).map(normalizeText), continent: h.continent, precision: h.precision || 'strict' }) !== signature);
   historyItems.unshift(item);
   historyItems = historyItems.slice(0, 8);
   saveJson(STORAGE_KEYS.history, historyItems);
@@ -485,10 +469,10 @@ function restoreHistory(index) {
   if (!item) return;
   artists = [...(item.artists || [])];
   selectedContinent = item.continent || 'all';
-  selectedGenres = [...(item.genres || [])];
+  precisionMode = item.precision || 'strict';
   renderTags();
   renderContinents();
-  renderGenres();
+  renderPrecision();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -510,7 +494,8 @@ function renderHistory() {
     chip.className = 'history-chip';
     chip.onclick = () => restoreHistory(i);
     const title = (h.artists || []).join(', ') || 'Búsqueda';
-    const meta = `${getContinentName(h.continent || 'all')}${h.genres?.length ? ' · ' + h.genres.join(', ') : ''}`;
+    const p = PRECISION_MODES.find(m => m.id === (h.precision || 'strict'))?.name || 'Alta';
+    const meta = `${getContinentName(h.continent || 'all')} · Precisión ${p}`;
     chip.innerHTML = `<span class="history-main"><span class="history-title">${escapeHtml(title)}</span><span class="history-meta">${escapeHtml(meta)}</span></span>`;
     el.appendChild(chip);
   });
@@ -629,10 +614,6 @@ function countTagOverlap(tagsA, tagsB) {
     if (found) matched.add(found);
   }
   return matched.size;
-}
-
-function getSelectedGenreTerms() {
-  return uniq(selectedGenres.flatMap(g => GENRE_ALIASES[g] || [g]).map(normalizeText));
 }
 
 function inferOriginFromTags(tags, continentId = selectedContinent) {
@@ -836,7 +817,7 @@ async function verifyContinentStrict(candidate, info, tags) {
     return { ok: true, label: 'Todo el mundo', source: 'sin filtro regional', confidence: 1, strict: true };
   }
 
-  // Primero MusicBrainz: si confirma país contrario, descartamos aunque Last.fm tenga tags ambiguos.
+  // Primero MusicBrainz: si confirma país contrario, descartamos siempre.
   const mbOrigin = await getOriginFromMusicBrainz(info?.name || candidate.name, info?.mbid || '');
   if (mbOrigin?.countryCode) {
     const ok = countryMatchesContinent(mbOrigin.countryCode, selectedContinent);
@@ -849,17 +830,21 @@ async function verifyContinentStrict(candidate, info, tags) {
     };
   }
 
-  // Fallback: tags nacionales claros, no estilos amplios como “latin”, “arabic” o “european”.
+  // En precisión alta, si MusicBrainz no confirma país, se descarta.
+  if (precisionMode === 'strict') {
+    return { ok: false, label: 'origen no confirmado', source: 'sin país confirmado', confidence: 0, strict: false };
+  }
+
+  // Precisión media: acepta solo tags nacionales claros, no estilos amplios como “latin”, “arabic” o “european”.
   const tagOrigin = inferOriginFromTags(tags, selectedContinent);
   if (tagOrigin) return tagOrigin;
 
-  return {
-    ok: false,
-    label: 'origen no confirmado',
-    source: 'sin país confirmado',
-    confidence: 0,
-    strict: false
-  };
+  // Modo explorar: permite señal regional fuerte, pero queda marcado como no confirmado.
+  if (precisionMode === 'explore' && tagMatches(tags, CONTINENT_QUERY_TAGS[selectedContinent] || [])) {
+    return { ok: true, label: 'origen probable por señales regionales', source: 'no confirmado', confidence: 0.25, strict: false };
+  }
+
+  return { ok: false, label: 'origen no confirmado', source: 'sin país confirmado', confidence: 0, strict: false };
 }
 
 async function fetchSimilar() {
@@ -885,12 +870,10 @@ async function fetchSimilar() {
   }
 
   const cleanSeedTags = uniq(seedTags.map(normalizeText)).slice(0, 20);
-  const selectedGenreTerms = getSelectedGenreTerms();
-
   // Candidatos regionales y por sonido: sirven para ampliar la búsqueda, no para validar país.
   const queryTags = [];
   if (selectedContinent !== 'all') queryTags.push(...(CONTINENT_QUERY_TAGS[selectedContinent] || []));
-  queryTags.push(...selectedGenreTerms, ...cleanSeedTags.slice(0, 9));
+  queryTags.push(...cleanSeedTags.slice(0, 12));
 
   const tagQueries = uniq(queryTags.map(normalizeText)).filter(Boolean).slice(0, 26);
   const taggedLists = await mapLimit(tagQueries, 4, async tag => {
@@ -914,9 +897,6 @@ async function fetchSimilar() {
       const tags = getArtistTags(info).filter(isUsefulSeedTag);
       const normalizedTags = tags.map(normalizeText);
       const listeners = parseInt(info?.stats?.listeners || 0, 10) || 0;
-      const selectedGenreOk = !selectedGenres.length || tagMatches(normalizedTags, selectedGenreTerms);
-      if (!selectedGenreOk) return null;
-
       const soundOverlap = countTagOverlap(normalizedTags, cleanSeedTags);
       const regionalTagSignal = selectedContinent === 'all' || tagMatches(normalizedTags, CONTINENT_QUERY_TAGS[selectedContinent] || []);
       const originTagSignal = selectedContinent === 'all' || !!inferOriginFromTags(normalizedTags, selectedContinent);
@@ -930,8 +910,7 @@ async function fetchSimilar() {
       const listenerScore = Math.min(5, Math.log10(listeners + 1));
       const directScore = candidate.directSimilarity * 60;
       const tagScore = Math.min(28, soundOverlap * 4.5 + candidate.tagHits * 1.4);
-      const genreScore = selectedGenres.length ? 5 : 0;
-      const preliminaryScore = directScore + tagScore + listenerScore + genreScore;
+      const preliminaryScore = directScore + tagScore + listenerScore;
 
       return {
         candidate,
@@ -957,7 +936,7 @@ async function fetchSimilar() {
 
   const finalResults = [];
   let originChecks = 0;
-  const MAX_ORIGIN_CHECKS = selectedContinent === 'all' ? 0 : 26;
+  const MAX_ORIGIN_CHECKS = selectedContinent === 'all' ? 0 : (precisionMode === 'strict' ? 46 : 34);
 
   for (const item of prelim) {
     if (finalResults.length >= 10) break;
@@ -1011,7 +990,7 @@ async function fetchSimilar() {
   finalResults.sort((a, b) => b.match - a.match || b.listeners - a.listeners);
 
   if (!finalResults.length && selectedContinent !== 'all') {
-    throw new Error(`No encontré artistas suficientemente parecidos con origen confirmado en ${getContinentName(selectedContinent)}. Es preferible no mostrar resultados antes que traer artistas de otro continente.`);
+    throw new Error(`No encontré artistas suficientemente parecidos con origen confiable en ${getContinentName(selectedContinent)}. En precisión alta es preferible no mostrar resultados antes que traer artistas de otro continente.`);
   }
 
   return finalResults.slice(0, 8);
@@ -1030,7 +1009,7 @@ function renderResults(recs) {
     <div class="results-head">
       <div>
         <div class="results-title">Recomendaciones</div>
-        <div class="results-note">${selectedContinent === 'all' ? 'Sin filtro regional' : `Filtro estricto: ${escapeHtml(contLabel)}`}</div>
+        <div class="results-note">${selectedContinent === 'all' ? 'Sin filtro regional' : `Filtro ${escapeHtml(PRECISION_MODES.find(m => m.id === precisionMode)?.name || 'Alta')}: ${escapeHtml(contLabel)}`}</div>
       </div>
       <button class="btn-small" onclick="window.scrollTo({top:0, behavior:'smooth'})">Nueva búsqueda</button>
     </div>`;

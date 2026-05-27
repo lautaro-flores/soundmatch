@@ -194,7 +194,36 @@ function formatFeedbackContext(feedback = []) {
   return `Feedback local del usuario para ajustar esta sesión. Aceptados: ${accepted}. Rechazados/no se parecen: ${rejected}. Evitá repetir rechazados y acercate al perfil sonoro de aceptados.`;
 }
 
-async function callLlmRecommend({ seed, continent, precision, mode, lastfmCandidates, seedInfo, feedbackContext }) {
+function sanitizeAdvancedInstructions(value = '') {
+  return String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 900);
+}
+
+function formatAdvancedInstructions(advancedInstructions = '') {
+  const clean = sanitizeAdvancedInstructions(advancedInstructions);
+  if (!clean) {
+    return `Instrucciones avanzadas del usuario: ninguna.
+No inventes restricciones extra.`;
+  }
+
+  return `Instrucciones avanzadas opcionales del usuario:
+"${clean}"
+
+Cómo usarlas:
+- Tratalas como preferencias blandas por defecto. Deben influir el ranking, pero NO reemplazar la búsqueda por parecido musical.
+- El continente seleccionado sigue siendo filtro duro salvo continent = all.
+- Solo convertí una instrucción en filtro duro si el usuario usa palabras como "obligatorio", "sí o sí", "excluir", "no mostrar", "solamente", "solo", "must", "mandatory".
+- Si una preferencia no se puede verificar, no devuelvas cero resultados: marcala como unknown o partial y bajá prompt_fit_score.
+- Para datos difíciles como "oyentes mensuales", recordá que no siempre hay dato público confiable. Usá el dato si aparece públicamente; si no, estimá con señales de popularidad como Last.fm listeners, followers, Spotify popularity/followers, prensa, playlists y notoriedad, pero marcá la incertidumbre.
+- Cada recomendación debe incluir prompt_fit_score y advanced_criteria con satisfied, partial, missing y unknown.
+- El prompt avanzado debe sumar/restar puntos, no dominar todo. Si hay una banda muy parecida pero cumple parcialmente el prompt, puede aparecer como Buena coincidencia o Experimental.`;
+}
+
+async function callLlmRecommend({ seed, continent, precision, mode, advancedInstructions, lastfmCandidates, seedInfo, feedbackContext }) {
   const continentLabel = toDisplayContinent(continent);
   const candidatesText = lastfmCandidates.length
     ? lastfmCandidates.slice(0, 70).map((c, i) => `${i + 1}. ${c.name} | Last.fm match: ${c.lastfm_match}`).join('\n')
@@ -208,6 +237,8 @@ async function callLlmRecommend({ seed, continent, precision, mode, lastfmCandid
     ? 'Modo EXPLORAR ESCENA: no te limites a similares directos. Identificá la escena/subgéneros del artista base y buscá artistas del continente elegido que compartan estética, sellos, prensa, escena o sonido.'
     : 'Modo SIMILAR DIRECTO: priorizá artistas que aparezcan como similares, relacionados o escuchados por los mismos fans. Podés ampliar por escena si Last.fm no alcanza.';
 
+  const advancedText = formatAdvancedInstructions(advancedInstructions);
+
   const prompt = `
 Sos un agente experto en descubrimiento musical. Necesito recomendaciones precisas, no una lista genérica.
 
@@ -216,6 +247,8 @@ Continente elegido: ${continentLabel} (${continent})
 Precisión: ${precision}
 ${modeText}
 
+${advancedText}
+
 Objetivo: detectar artistas/bandas que suenen realmente parecidos a "${seed}" y pertenezcan al continente elegido.
 
 Reglas obligatorias:
@@ -223,11 +256,12 @@ Reglas obligatorias:
 2. Priorizá: "fans also listen", "similar artists", reseñas que comparen artistas, escenas compartidas, sellos, giras, tags sonoros, subgéneros, playlists y comunidades.
 3. El continente es filtro duro salvo si continent = all. Si el usuario elige Europa, artistas de Estados Unidos como The Velvet Underground deben quedar afuera, aunque sirvan como referencia sonora.
 4. No dependas solo de la lista inicial de Last.fm. Si un artista muy relevante no aparece ahí, buscalo igual por escena y similitud web.
-5. Para casos tipo "Winona Riders + Europa", artistas como New Candys deben ser considerados si la evidencia pública sostiene que son europeos y sonoramente compatibles.
-6. Separá claramente tres cosas: parecido sonoro, escucha cruzada/fans, y validación de origen.
-7. No priorices popularidad. Priorizá parecido musical y origen correcto.
-8. Si el origen no es confiable, bajá origin_confidence o no lo recomiendes según precisión.
-9. Devolvé SOLO JSON válido. Sin markdown, sin texto antes ni después.
+5. Separá claramente tres cosas: parecido sonoro, escucha cruzada/fans, y validación de origen.
+6. No priorices popularidad. Priorizá parecido musical y origen correcto.
+7. Si el origen no es confiable, bajá origin_confidence o no lo recomiendes según precisión.
+8. Si hay instrucciones avanzadas, separá qué es filtro duro y qué es preferencia blanda.
+9. No sacrifiques el parecido musical solo por cumplir una preferencia secundaria: el resultado ideal combina sonido parecido + continente correcto + buen ajuste al prompt.
+10. Devolvé SOLO JSON válido. Sin markdown, sin texto antes ni después.
 
 Interpretación de precisión:
 - strict: país/continente confirmado por evidencia fuerte. No muestres dudosos.
@@ -254,6 +288,11 @@ Devolvé este JSON exacto:
   "seed": "${seed}",
   "selected_continent": "${continent}",
   "detected_scene": ["subgénero/escena 1", "subgénero/escena 2"],
+  "interpreted_prompt": {
+    "hard_constraints": ["restricción obligatoria detectada, si existe"],
+    "soft_preferences": ["preferencia blanda detectada, si existe"],
+    "notes": "cómo se interpretaron las instrucciones avanzadas"
+  },
   "recommendations": [
     {
       "name": "Nombre del artista",
@@ -263,9 +302,16 @@ Devolvé este JSON exacto:
       "sound_confidence": 0,
       "origin_confidence": 0,
       "fan_overlap_confidence": 0,
+      "prompt_fit_score": 0,
       "fan_signal": "evidencia breve de escucha cruzada / similar artists / fans also listen",
       "sound_signal": ["rasgo sonoro 1", "rasgo sonoro 2", "rasgo sonoro 3"],
       "origin_signal": "evidencia breve del país/origen",
+      "advanced_criteria": {
+        "satisfied": ["criterio avanzado cumplido"],
+        "partial": ["criterio avanzado parcialmente cumplido"],
+        "missing": ["criterio avanzado que no cumple"],
+        "unknown": ["criterio avanzado no verificable"]
+      },
       "why": "explicación concreta de por qué encaja con ${seed}",
       "evidence": ["evidencia breve 1", "evidencia breve 2"],
       "source_queries": ["query o fuente 1", "query o fuente 2"],
@@ -314,7 +360,8 @@ function computeFinalScore(rec) {
   const sound = clampScore(rec.sound_confidence);
   const origin = clampScore(rec.origin_confidence);
   const fan = clampScore(rec.fan_overlap_confidence);
-  return Math.round((sim * 0.40) + (sound * 0.25) + (origin * 0.22) + (fan * 0.13));
+  const promptFit = clampScore(rec.prompt_fit_score, 70);
+  return Math.round((sim * 0.34) + (sound * 0.24) + (origin * 0.20) + (fan * 0.12) + (promptFit * 0.10));
 }
 
 function scoreTier(finalScore, rec) {
@@ -325,10 +372,18 @@ function scoreTier(finalScore, rec) {
   return 'Experimental';
 }
 
-function normalizeRecommendation(rec, seed, continent, precision, mb, filter) {
+function normalizeRecommendation(rec, seed, continent, precision, mb, filter, advancedInstructions = '') {
   const soundSignal = uniq(Array.isArray(rec.sound_signal) ? rec.sound_signal : []);
   const evidence = uniq(Array.isArray(rec.evidence) ? rec.evidence : []);
   const queries = uniq(Array.isArray(rec.source_queries) ? rec.source_queries : []);
+  const criteria = rec.advanced_criteria && typeof rec.advanced_criteria === 'object' ? rec.advanced_criteria : {};
+  const normalizedCriteria = {
+    satisfied: uniq(Array.isArray(criteria.satisfied) ? criteria.satisfied : []).slice(0, 6),
+    partial: uniq(Array.isArray(criteria.partial) ? criteria.partial : []).slice(0, 6),
+    missing: uniq(Array.isArray(criteria.missing) ? criteria.missing : []).slice(0, 6),
+    unknown: uniq(Array.isArray(criteria.unknown) ? criteria.unknown : []).slice(0, 6)
+  };
+  const hasAdvanced = Boolean(sanitizeAdvancedInstructions(advancedInstructions));
   const originCountry = rec.country || mb?.country || '';
   const mappedContinent = rec.continent || continentFromCountryName(originCountry) || mb?.continent || '';
 
@@ -341,6 +396,8 @@ function normalizeRecommendation(rec, seed, continent, precision, mb, filter) {
     sound_confidence: clampScore(rec.sound_confidence),
     origin_confidence: clampScore(rec.origin_confidence),
     fan_overlap_confidence: clampScore(rec.fan_overlap_confidence),
+    prompt_fit_score: hasAdvanced ? clampScore(rec.prompt_fit_score, 60) : 100,
+    advanced_criteria: normalizedCriteria,
     sound_signal: soundSignal.slice(0, 8),
     evidence: evidence.slice(0, 6),
     source_queries: queries.slice(0, 6),
@@ -358,11 +415,12 @@ function normalizeRecommendation(rec, seed, continent, precision, mb, filter) {
     sonido: normalized.sound_confidence,
     origen: normalized.origin_confidence,
     fans: normalized.fan_overlap_confidence,
+    prompt: normalized.prompt_fit_score,
     match: normalized.similarity_score,
     total: normalized.final_score
   };
   normalized.compare_seed = seed;
-  normalized.search_context = { continent, precision };
+  normalized.search_context = { continent, precision, advanced_instructions: sanitizeAdvancedInstructions(advancedInstructions) };
   return normalized;
 }
 
@@ -377,6 +435,7 @@ app.post('/api/recommend', async (req, res) => {
     const precision = String(req.body.precision || 'balanced').trim();
     const mode = String(req.body.mode || 'similar').trim();
     const feedbackContext = Array.isArray(req.body.feedbackContext) ? req.body.feedbackContext : [];
+    const advancedInstructions = sanitizeAdvancedInstructions(req.body.advancedInstructions || '');
 
     if (!seed) return res.status(400).json({ error: 'Ingresá una banda o artista.' });
     if (!CONTINENTS.has(continent)) return res.status(400).json({ error: 'Continente inválido.' });
@@ -388,7 +447,7 @@ app.post('/api/recommend', async (req, res) => {
       getLastFmInfo(seed)
     ]);
 
-    const llm = await callLlmRecommend({ seed, continent, precision, mode, lastfmCandidates, seedInfo, feedbackContext });
+    const llm = await callLlmRecommend({ seed, continent, precision, mode, advancedInstructions, lastfmCandidates, seedInfo, feedbackContext });
     const recommendations = Array.isArray(llm.parsed?.recommendations) ? llm.parsed.recommendations : [];
 
     const final = [];
@@ -409,7 +468,7 @@ app.post('/api/recommend', async (req, res) => {
         continue;
       }
 
-      final.push(normalizeRecommendation(rec, seed, continent, precision, mb, filter));
+      final.push(normalizeRecommendation(rec, seed, continent, precision, mb, filter, advancedInstructions));
     }
 
     final.sort((a, b) => b.final_score - a.final_score);
@@ -420,6 +479,8 @@ app.post('/api/recommend', async (req, res) => {
       continent_label: toDisplayContinent(continent),
       precision,
       mode,
+      advanced_instructions: advancedInstructions,
+      interpreted_prompt: llm.parsed?.interpreted_prompt || { hard_constraints: [], soft_preferences: [], notes: '' },
       detected_scene: Array.isArray(llm.parsed?.detected_scene) ? llm.parsed.detected_scene : [],
       debug_notes: Array.isArray(llm.parsed?.debug_notes) ? llm.parsed.debug_notes : [],
       lastfm_candidates_used: lastfmCandidates.length,
@@ -440,6 +501,7 @@ app.post('/api/explain-missing', async (req, res) => {
     const missingArtist = String(req.body.missingArtist || '').trim();
     const continent = String(req.body.continent || 'all').trim();
     const precision = String(req.body.precision || 'balanced').trim();
+    const advancedInstructions = sanitizeAdvancedInstructions(req.body.advancedInstructions || '');
 
     if (!seed || !missingArtist) return res.status(400).json({ error: 'Ingresá la banda base y el artista que esperabas ver.' });
     if (!CONTINENTS.has(continent)) return res.status(400).json({ error: 'Continente inválido.' });
@@ -454,6 +516,7 @@ app.post('/api/explain-missing', async (req, res) => {
 Sos un analista de recomendaciones musicales.
 El usuario buscó artistas parecidos a "${seed}" filtrando por ${toDisplayContinent(continent)} (${continent}) con precisión ${precision}.
 El usuario esperaba ver a "${missingArtist}" y quiere saber por qué no apareció y si debería aparecer.
+${formatAdvancedInstructions(advancedInstructions)}
 
 Usá búsqueda web y metadata pública. Separá:
 - parecido sonoro
@@ -500,6 +563,7 @@ app.post('/api/compare', async (req, res) => {
     const seed = String(req.body.artist || '').trim();
     const candidate = String(req.body.candidate || '').trim();
     const continent = String(req.body.continent || 'all').trim();
+    const advancedInstructions = sanitizeAdvancedInstructions(req.body.advancedInstructions || '');
 
     if (!seed || !candidate) return res.status(400).json({ error: 'Faltan artista base o candidato.' });
 
@@ -512,6 +576,7 @@ app.post('/api/compare', async (req, res) => {
     const prompt = `
 Compará musicalmente a "${seed}" con "${candidate}" para una app de recomendación.
 El usuario filtró por continente: ${toDisplayContinent(continent)} (${continent}).
+${formatAdvancedInstructions(advancedInstructions)}
 
 Analizá con búsqueda web y metadata pública:
 - rasgos sonoros en común

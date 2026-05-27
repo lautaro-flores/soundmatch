@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY || '';
-const MUSICBRAINZ_USER_AGENT = process.env.MUSICBRAINZ_USER_AGENT || 'SoundMatchLLMAgent/2.0 (local-dev@example.com)';
+const MUSICBRAINZ_USER_AGENT = process.env.MUSICBRAINZ_USER_AGENT || 'NoEsSoloRockAndRoll/1.0 (local-dev@example.com)';
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
@@ -189,9 +189,33 @@ async function callGeminiJson(prompt, temperature = 0.15) {
 
 function formatFeedbackContext(feedback = []) {
   if (!Array.isArray(feedback) || !feedback.length) return 'Sin feedback previo del usuario.';
-  const accepted = feedback.filter(x => x?.value === 'up').slice(0, 8).map(x => x.artist).join(', ') || 'ninguno';
-  const rejected = feedback.filter(x => x?.value === 'down').slice(0, 8).map(x => `${x.artist}${x.reason ? ` (${x.reason})` : ''}`).join(', ') || 'ninguno';
-  return `Feedback local del usuario para ajustar esta sesión. Aceptados: ${accepted}. Rechazados/no se parecen: ${rejected}. Evitá repetir rechazados y acercate al perfil sonoro de aceptados.`;
+
+  const accepted =
+    feedback
+      .filter(x => x?.value === 'up')
+      .slice(0, 8)
+      .map(x => x.artist)
+      .join(', ') || 'ninguno';
+
+  const moreLike =
+    feedback
+      .filter(x => x?.value === 'more_like')
+      .slice(0, 8)
+      .map(x => x.artist)
+      .join(', ') || 'ninguno';
+
+  const rejected =
+    feedback
+      .filter(x => x?.value === 'down')
+      .slice(0, 8)
+      .map(x => `${x.artist}${x.reason ? ` (${x.reason})` : ''}`)
+      .join(', ') || 'ninguno';
+
+  return `Feedback local del usuario para ajustar esta sesión.
+- Aceptados / sirven: ${accepted}.
+- Más como este / usar como segunda referencia sonora: ${moreLike}.
+- Rechazados / no se parecen: ${rejected}.
+Reglas: acercate al perfil sonoro de aceptados y especialmente de "más como este". Evitá repetir rechazados o artistas con rasgos similares a los rechazados, salvo que haya una razón fuerte.`;
 }
 
 function sanitizeAdvancedInstructions(value = '') {
@@ -613,5 +637,5 @@ Devolvé SOLO JSON válido:
 });
 
 app.listen(PORT, () => {
-  console.log(`SoundMatch LLM Agent listo en http://localhost:${PORT}`);
+  console.log(`No es solo rock and roll listo en http://localhost:${PORT}`);
 });

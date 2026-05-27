@@ -426,6 +426,13 @@
             <button class="ghost prompt-example" data-prompt="Quiero artistas muy parecidos en sonido, aunque sean menos conocidos. Evitá bandas demasiado mainstream o con un sonido muy pulido.">Muy parecido, no mainstream</button>
             <button class="ghost prompt-example" data-prompt="Quiero recomendaciones de esta década o bandas activas actualmente. Si no se puede verificar, marcá el dato como incierto.">De esta época</button>
           </div>
+          <div class="hint" style="margin-top:12px">Chips rápidos: suman criterio sin borrar lo que ya escribiste.</div>
+          <div class="prompt-tools">
+            <button class="ghost quick-prompt" data-add="Preferí artistas más under y menos conocidos, sin sacrificar parecido sonoro.">Más under</button>
+            <button class="ghost quick-prompt" data-add="Preferí bandas actuales o activas en esta época; si no se puede verificar, marcá el dato como incierto.">Más actual</button>
+            <button class="ghost quick-prompt" data-add="Preferí un sonido más oscuro, crudo, psicodélico o nocturno.">Más oscuro</button>
+            <button class="ghost quick-prompt" data-add="Evitá artistas demasiado mainstream, demasiado pulidos o excesivamente populares.">Menos mainstream</button>
+          </div>
         </section>
 
         <section class="panel">
@@ -458,7 +465,7 @@
       <aside>
         <section class="panel">
           <div class="section-title"><div class="label">¿Por qué no aparece?</div></div>
-          <input id="missingArtist" placeholder="" />
+          <input id="missingArtist" placeholder="Ej: New Candys" />
           <button class="discover" id="missingBtn">Analizar ausencia</button>
           <div class="hint">Sirve para entender si una banda debería entrar y qué señal falló.</div>
           <div class="analysis-output" id="missingOutput" style="margin-top:12px"></div>
@@ -563,6 +570,20 @@ function getAdvancedInstructions() {
   return $('#advancedInstructions')?.value.trim() || '';
 }
 
+function appendAdvancedInstruction(text) {
+  const input = $('#advancedInstructions');
+  const current = input.value.trim();
+  const clean = String(text || '').trim();
+  if (!clean) return;
+  input.value = current ? `${current} ${clean}` : clean;
+  input.focus();
+}
+
+function setAdvancedInstruction(text) {
+  $('#advancedInstructions').value = String(text || '').trim();
+  $('#advancedInstructions').focus();
+}
+
 function renderChoices() {
   $('#continents').innerHTML = CONTINENTS.map(([id, label]) => `<div class="choice ${id === selectedContinent ? 'active' : ''}" data-continent="${id}"><strong>${label}</strong></div>`).join('');
   $('#precision').innerHTML = PRECISION.map(([id, label, sub]) => `<div class="choice ${id === selectedPrecision ? 'active' : ''}" data-precision="${id}"><strong>${label}</strong><small>${sub}</small></div>`).join('');
@@ -621,12 +642,20 @@ function feedbackKey() { return 'soundmatch_feedback'; }
 function addFeedback(artist, value) {
   const seed = $('#artist').value.trim();
   const all = storageGet(feedbackKey()).filter(x => !(x.artist === artist && x.seed === seed));
-  all.unshift({ artist, seed, continent: selectedContinent, value, date: new Date().toISOString() });
+  const reason = value === 'more_like' ? 'más como este / segunda referencia sonora' : '';
+  all.unshift({ artist, seed, continent: selectedContinent, value, reason, date: new Date().toISOString() });
   storageSet(feedbackKey(), all.slice(0, 80));
   renderFeedbackSummary();
   const enc = encodeURIComponent(artist);
   $(`[data-feedback-up="${CSS.escape(enc)}"]`)?.classList.toggle('active', value === 'up');
   $(`[data-feedback-down="${CSS.escape(enc)}"]`)?.classList.toggle('active', value === 'down');
+  $(`[data-feedback-more="${CSS.escape(enc)}"]`)?.classList.toggle('active', value === 'more_like');
+}
+
+function moreLikeDecoded(encoded) {
+  const artist = decodeURIComponent(encoded);
+  addFeedback(artist, 'more_like');
+  appendAdvancedInstruction(`Tomá a ${artist} como segunda referencia sonora para la próxima búsqueda.`);
 }
 function addFavoriteDecoded(encoded) { addFavorite(decodeURIComponent(encoded)); }
 function compareArtistDecoded(encoded) { compareArtist(decodeURIComponent(encoded)); }
@@ -639,8 +668,9 @@ function renderFeedbackSummary() {
   const feedback = storageGet(feedbackKey());
   const up = feedback.filter(x => x.value === 'up').length;
   const down = feedback.filter(x => x.value === 'down').length;
+  const more = feedback.filter(x => x.value === 'more_like').length;
   $('#feedbackSummary').innerHTML = feedback.length
-    ? `<div class="analysis-card"><strong>${up}</strong> útiles · <strong>${down}</strong> no se parecen<br><span class="muted">El próximo pedido manda este feedback al agente para ajustar la búsqueda.</span></div>`
+    ? `<div class="analysis-card"><strong>${up}</strong> útiles · <strong>${more}</strong> más como este · <strong>${down}</strong> no se parecen<br><span class="muted">El próximo pedido manda este feedback al agente para ajustar la búsqueda.</span></div>`
     : 'Todavía no marcaste recomendaciones.';
 }
 
@@ -757,6 +787,7 @@ function renderCard(r, i, data) {
         <div class="card-actions">
           <button class="mini-btn" onclick="addFavoriteDecoded('${encName}')">♡ Favorito</button>
           <button class="mini-btn" onclick="compareArtistDecoded('${encName}')">Comparar</button>
+          <button class="mini-btn good" data-feedback-more="${safeAttr(encName)}" onclick="moreLikeDecoded('${encName}')">⚡ Más como este</button>
           <button class="mini-btn good" data-feedback-up="${safeAttr(encName)}" onclick="addFeedbackDecoded('${encName}','up')">👍 Me sirve</button>
           <button class="mini-btn bad" data-feedback-down="${safeAttr(encName)}" onclick="addFeedbackDecoded('${encName}','down')">👎 No se parece</button>
         </div>
@@ -902,7 +933,8 @@ $('#missingBtn').onclick = explainMissing;
 $('#copyPlaylistBtn').onclick = copyPlaylist;
 $('#healthBtn').onclick = checkHealth;
 $('#clearAdvancedBtn').onclick = () => { $('#advancedInstructions').value = ''; };
-$$('.prompt-example').forEach(btn => { btn.onclick = () => { $('#advancedInstructions').value = btn.dataset.prompt || ''; $('#advancedInstructions').focus(); }; });
+$$('.prompt-example').forEach(btn => { btn.onclick = () => setAdvancedInstruction(btn.dataset.prompt || ''); });
+$$('.quick-prompt').forEach(btn => { btn.onclick = () => appendAdvancedInstruction(btn.dataset.add || ''); });
 $('#clearFavsBtn').onclick = () => { storageSet('soundmatch_favorites', []); renderSideLists(); };
 $('#clearHistoryBtn').onclick = () => { storageSet('soundmatch_history', []); renderSideLists(); };
 $('#artist').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });

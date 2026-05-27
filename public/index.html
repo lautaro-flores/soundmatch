@@ -1,159 +1,328 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SoundMatch LLM Agent</title>
+  <title>SoundMatch · LLM Agent</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; }
     :root {
       --bg: #08080d;
-      --panel: rgba(24, 24, 35, 0.82);
-      --panel2: rgba(34, 34, 50, 0.72);
-      --border: rgba(178, 134, 255, 0.18);
-      --text: #f6f3ff;
-      --muted: #9f9bb8;
-      --accent: #b987ff;
-      --accent2: #7dd3fc;
+      --panel: rgba(25, 25, 36, .82);
+      --panel2: rgba(35, 35, 50, .74);
+      --panel3: rgba(255,255,255,.045);
+      --text: #f6f2ff;
+      --muted: #9d9ab8;
+      --faint: #6f6c89;
+      --border: rgba(198, 177, 255, .14);
+      --border2: rgba(255,255,255,.1);
+      --accent: #c084fc;
+      --accent2: #818cf8;
       --good: #6ee7b7;
+      --warn: #facc15;
       --bad: #fca5a5;
+      --blue: #93c5fd;
+      --shadow: 0 24px 70px rgba(0,0,0,.35);
     }
-    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
       color: var(--text);
       background:
-        radial-gradient(circle at 10% 0%, rgba(185,135,255,.20), transparent 35%),
-        radial-gradient(circle at 90% 10%, rgba(125,211,252,.16), transparent 30%),
-        radial-gradient(circle at 50% 100%, rgba(110,231,183,.12), transparent 30%),
+        radial-gradient(circle at top left, rgba(192,132,252,.16), transparent 35%),
+        radial-gradient(circle at 85% 10%, rgba(129,140,248,.13), transparent 34%),
+        radial-gradient(circle at 50% 100%, rgba(52,211,153,.08), transparent 35%),
         var(--bg);
       font-family: 'DM Sans', system-ui, sans-serif;
     }
-    .app { max-width: 1100px; margin: 0 auto; padding: 36px 18px 56px; }
-    header { display: grid; gap: 10px; text-align: center; margin-bottom: 28px; }
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-size: clamp(2.3rem, 5vw, 4.6rem);
-      font-weight: 800;
-      letter-spacing: -3px;
-      line-height: .9;
-      background: linear-gradient(135deg, var(--accent), var(--accent2), var(--good));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .subtitle { color: var(--muted); font-size: 1rem; }
-    .badge { justify-self: center; border: 1px solid rgba(110,231,183,.32); color: var(--good); background: rgba(110,231,183,.08); border-radius: 999px; padding: 7px 12px; font-size: .75rem; letter-spacing: .8px; text-transform: uppercase; }
-    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 18px; align-items: start; }
-    @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 24px; padding: 20px; box-shadow: 0 24px 70px rgba(0,0,0,.24); backdrop-filter: blur(12px); }
-    .panel + .panel { margin-top: 16px; }
-    .label { font-family: 'Syne', sans-serif; font-size: .78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
-    .search-row { display: flex; gap: 10px; }
-    input {
-      flex: 1;
-      width: 100%;
-      background: rgba(255,255,255,.045);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 14px 16px;
-      border-radius: 15px;
-      outline: none;
-      font: inherit;
-    }
-    input:focus { border-color: rgba(185,135,255,.55); box-shadow: 0 0 0 4px rgba(185,135,255,.08); }
+    button, input, select, textarea { font: inherit; }
     button {
       border: 0;
-      border-radius: 15px;
-      cursor: pointer;
-      font-family: 'Syne', sans-serif;
+      border-radius: 14px;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      padding: 12px 16px;
       font-weight: 800;
-      color: #fff;
-      background: linear-gradient(135deg, var(--accent), #6d5dfc);
-      padding: 14px 18px;
-      transition: transform .15s, opacity .15s;
+      cursor: pointer;
+      transition: transform .16s, opacity .16s, border-color .16s, background .16s;
     }
     button:hover { transform: translateY(-1px); }
     button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 9px; }
+    .ghost {
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .ghost:hover { color: var(--text); border-color: rgba(255,255,255,.22); }
+    .danger { color: var(--bad); }
+    .app { width: min(1240px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 52px; }
+    header { display: grid; gap: 10px; text-align: center; margin: 18px 0 30px; }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      letter-spacing: -3px;
+      line-height: .92;
+      background: linear-gradient(135deg, #fff, var(--accent), var(--accent2), var(--good));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .subtitle { color: var(--muted); font-size: .98rem; }
+    .badge-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid rgba(110,231,183,.26);
+      background: rgba(110,231,183,.08);
+      color: var(--good);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .badge.purple { color: #d8b4fe; border-color: rgba(216,180,254,.28); background: rgba(216,180,254,.08); }
+
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+    main, aside { display: grid; gap: 16px; }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.03)), var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .panel.flat { box-shadow: none; }
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 13px;
+    }
+    .label {
+      font-family: 'Syne', sans-serif;
+      color: var(--accent);
+      font-size: .78rem;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .hint { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+    .search-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+    input, textarea {
+      width: 100%;
+      color: var(--text);
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 14px 15px;
+      outline: none;
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    input:focus, textarea:focus { border-color: rgba(192,132,252,.55); }
+    input::placeholder, textarea::placeholder { color: var(--faint); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 9px; }
     .choice {
+      position: relative;
+      user-select: none;
+      padding: 13px 12px;
       border: 1px solid var(--border);
       background: rgba(255,255,255,.035);
-      border-radius: 16px;
-      padding: 13px 10px;
       color: var(--muted);
-      text-align: center;
-      user-select: none;
+      border-radius: 16px;
       cursor: pointer;
-      transition: all .15s;
+      transition: .16s ease;
     }
-    .choice:hover, .choice.active { border-color: rgba(185,135,255,.55); background: rgba(185,135,255,.12); color: var(--text); }
-    .choice small { display: block; margin-top: 4px; color: var(--muted); font-size: .72rem; }
-    .discover { width: 100%; margin-top: 18px; padding: 17px 20px; font-size: 1rem; }
-    .note { color: var(--muted); font-size: .85rem; line-height: 1.45; margin-top: 12px; }
-    .results { display: grid; gap: 12px; margin-top: 16px; }
+    .choice:hover { border-color: rgba(192,132,252,.34); color: var(--text); }
+    .choice.active {
+      background: rgba(192,132,252,.12);
+      border-color: rgba(192,132,252,.55);
+      color: var(--text);
+      box-shadow: 0 0 0 1px rgba(192,132,252,.08) inset;
+    }
+    .choice strong { display: block; margin-bottom: 3px; }
+    .choice small { display: block; color: var(--muted); line-height: 1.3; }
+    .actions-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .discover { width: 100%; padding: 17px 20px; font-size: 1rem; margin-top: 4px; }
+
+    .status {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .error { border-color: rgba(252,165,165,.35); color: var(--bad); background: rgba(252,165,165,.08); }
+    .loading .dots::after { content: ''; animation: dots 1.2s infinite; }
+    @keyframes dots { 0%{content:''} 33%{content:'.'} 66%{content:'..'} 100%{content:'...'} }
+
+    .results { display: grid; gap: 16px; }
+    .scene-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .scene-chip, .pill {
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: .78rem;
+    }
+    .result-group { display: grid; gap: 10px; }
+    .group-title {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      color: var(--muted);
+      font-weight: 800;
+      font-family: 'Syne', sans-serif;
+      padding: 0 6px;
+    }
     .card {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       gap: 14px;
       background: var(--panel2);
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: 22px;
       padding: 16px;
-      animation: rise .25s both;
+      animation: rise .24s ease both;
     }
     @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .num { font-family: 'Syne'; font-size: 1.8rem; font-weight: 800; color: var(--accent2); min-width: 34px; }
-    .name { font-family: 'Syne'; font-size: 1.2rem; font-weight: 800; margin-bottom: 3px; }
+    .num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.8rem;
+      min-width: 34px;
+      color: var(--accent2);
+      line-height: 1;
+    }
+    .name-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 4px; }
+    .name { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; }
+    .tier {
+      font-size: .72rem; font-weight: 900; letter-spacing: .2px;
+      padding: 5px 9px; border-radius: 999px;
+      border: 1px solid rgba(110,231,183,.28); color: var(--good); background: rgba(110,231,183,.08);
+    }
+    .tier.mid { border-color: rgba(147,197,253,.26); color: var(--blue); background: rgba(147,197,253,.08); }
+    .tier.low { border-color: rgba(250,204,21,.26); color: var(--warn); background: rgba(250,204,21,.07); }
     .country { color: var(--good); font-size: .78rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-    .why { color: #d9d6ee; line-height: 1.45; font-size: .92rem; margin-bottom: 10px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .why { color: #e3def5; line-height: 1.48; font-size: .94rem; margin: 9px 0 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
     .chip { color: #c4b5fd; border: 1px solid rgba(196,181,253,.22); background: rgba(196,181,253,.08); border-radius: 999px; padding: 4px 8px; font-size: .72rem; }
-    .evidence { color: var(--muted); font-size: .82rem; line-height: 1.4; }
-    .score { text-align: right; min-width: 82px; }
-    .score strong { display: block; font-family: 'Syne'; font-size: 1.6rem; color: var(--good); }
-    .links { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
-    .links a { color: var(--muted); text-decoration: none; border: 1px solid var(--border); border-radius: 999px; padding: 5px 9px; font-size: .76rem; }
-    .links a:hover { color: var(--text); border-color: rgba(255,255,255,.28); }
+    .evidence { color: var(--muted); font-size: .84rem; line-height: 1.45; }
+    details { margin-top: 10px; }
+    summary { color: var(--muted); cursor: pointer; font-weight: 800; font-size: .84rem; }
+    .details-box { margin-top: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,.035); color: var(--muted); font-size: .84rem; line-height: 1.48; }
+    .score-col { text-align: right; min-width: 118px; display: grid; gap: 8px; align-content: start; }
+    .score-main strong { display: block; font-family: 'Syne'; font-size: 1.9rem; line-height: 1; color: var(--good); }
+    .score-main span { color: var(--muted); font-size: .78rem; }
+    .meter { display: grid; gap: 3px; }
+    .meter-label { display: flex; justify-content: space-between; gap: 6px; color: var(--muted); font-size: .69rem; }
+    .bar { height: 6px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.08); }
+    .bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent2), var(--good)); }
+    .links, .card-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .links a, .mini-btn {
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .76rem;
+      background: rgba(255,255,255,.035);
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .links a:hover, .mini-btn:hover { color: var(--text); border-color: rgba(255,255,255,.24); }
+    .mini-btn.good.active, .mini-btn.good:hover { color: var(--good); border-color: rgba(110,231,183,.28); background: rgba(110,231,183,.08); }
+    .mini-btn.bad.active, .mini-btn.bad:hover { color: var(--bad); border-color: rgba(252,165,165,.28); background: rgba(252,165,165,.08); }
+
     .side-list { display: grid; gap: 8px; }
-    .side-item { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 10px 12px; background: rgba(255,255,255,.035); border: 1px solid var(--border); border-radius: 14px; color: var(--muted); font-size: .85rem; }
-    .side-item button { padding: 4px 8px; font-size: .7rem; border-radius: 999px; background: rgba(255,255,255,.08); color: var(--muted); }
-    .empty, .error, .loading { padding: 20px; background: rgba(255,255,255,.035); border: 1px solid var(--border); border-radius: 18px; color: var(--muted); line-height: 1.5; }
-    .error { border-color: rgba(252,165,165,.35); color: var(--bad); background: rgba(252,165,165,.08); }
-    .sources a { display: block; color: var(--muted); text-decoration: none; font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 0; }
+    .side-item { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 11px 12px; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 16px; color: var(--muted); font-size: .86rem; }
+    .side-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .side-item button { padding: 5px 9px; font-size: .7rem; border-radius: 999px; }
+    .sources { display: grid; gap: 7px; }
+    .sources a { display: block; color: var(--muted); text-decoration: none; font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 6px 8px; background: rgba(255,255,255,.035); border: 1px solid var(--border); border-radius: 12px; }
     .sources a:hover { color: var(--text); }
-    .heart { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--border); padding: 8px 10px; }
+    .analysis-output { display: grid; gap: 10px; }
+    .analysis-card { background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 18px; padding: 13px; color: var(--muted); line-height: 1.48; font-size: .9rem; }
+    .analysis-card strong { color: var(--text); }
+    .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .muted { color: var(--muted); }
+    .small { font-size: .8rem; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      aside .panel:last-child { grid-column: 1 / -1; }
+    }
+    @media (max-width: 700px) {
+      .app { width: min(100% - 20px, 1240px); padding-top: 16px; }
+      .search-row { grid-template-columns: 1fr; }
+      aside { grid-template-columns: 1fr; }
+      .card { grid-template-columns: 1fr; }
+      .num { display: none; }
+      .score-col { text-align: left; min-width: 0; }
+      .actions-grid, .two-cols { grid-template-columns: 1fr; }
+      .logo { letter-spacing: -2px; }
+    }
   </style>
 </head>
 <body>
   <div class="app">
     <header>
       <div class="logo">SoundMatch</div>
-      <div class="subtitle">Recomendaciones con LLM + búsqueda web + validación de continente</div>
-      <div class="badge">Sin base propia · con evidencia</div>
+      <div class="subtitle">Recomendaciones con LLM, búsqueda web y validación fuerte de continente</div>
+      <div class="badge-row">
+        <span class="badge">Sin base propia</span>
+        <span class="badge purple">Explica cada resultado</span>
+        <span class="badge">Feedback local</span>
+      </div>
     </header>
 
     <div class="layout">
       <main>
         <section class="panel">
-          <div class="label">1. Banda o artista base</div>
+          <div class="section-title">
+            <div class="label">1. Banda o artista base</div>
+            <button class="ghost" id="healthBtn" title="Verifica que el backend responda">Estado</button>
+          </div>
           <div class="search-row">
             <input id="artist" placeholder="Ej: Winona Riders, Radiohead, Soda Stereo..." autocomplete="off" />
             <button id="searchBtn">Buscar</button>
           </div>
-          <div class="note">El motor busca señales públicas: artistas similares, escucha cruzada, escenas, reseñas y origen geográfico.</div>
+          <div class="hint" style="margin-top:10px">El motor busca señales públicas: similares, fans también escuchan, escenas, reseñas, tags sonoros y origen geográfico.</div>
         </section>
 
         <section class="panel">
-          <div class="label">2. Continente</div>
+          <div class="section-title"><div class="label">2. Continente</div></div>
           <div class="grid" id="continents"></div>
         </section>
 
         <section class="panel">
-          <div class="label">3. Precisión</div>
+          <div class="section-title"><div class="label">3. Precisión y modo</div></div>
           <div class="grid" id="precision"></div>
+          <div style="height:10px"></div>
+          <div class="grid" id="modes"></div>
           <button class="discover" id="discoverBtn">Descubrir música ✦</button>
+        </section>
+
+        <section class="panel flat hidden" id="summaryPanel">
+          <div class="section-title">
+            <div class="label">Resumen de búsqueda</div>
+            <div class="hint" id="summaryMeta"></div>
+          </div>
+          <div id="summaryContent"></div>
+          <div class="actions-grid" style="margin-top:12px">
+            <button class="ghost" id="copyPlaylistBtn">Copiar playlist</button>
+            <button class="ghost" id="exportTxtBtn">Exportar TXT</button>
+            <button class="ghost" id="exportCsvBtn">Exportar CSV</button>
+            <button class="ghost" id="exportJsonBtn">Exportar JSON</button>
+          </div>
         </section>
 
         <div id="results" class="results"></div>
@@ -161,16 +330,42 @@
 
       <aside>
         <section class="panel">
-          <div class="label">Favoritos</div>
+          <div class="section-title"><div class="label">¿Por qué no aparece?</div></div>
+          <input id="missingArtist" placeholder="Ej: New Candys" />
+          <button class="discover" id="missingBtn">Analizar ausencia</button>
+          <div class="hint">Sirve para entender si una banda debería entrar y qué señal falló.</div>
+          <div class="analysis-output" id="missingOutput" style="margin-top:12px"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title"><div class="label">Comparador A/B</div></div>
+          <div id="compareOutput" class="analysis-output"><div class="status">Tocá “Comparar” en una recomendación para ver similitudes y diferencias.</div></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <div class="label">Favoritos</div>
+            <button class="ghost" id="clearFavsBtn">Limpiar</button>
+          </div>
           <div class="side-list" id="favorites"></div>
         </section>
+
         <section class="panel">
-          <div class="label">Historial</div>
+          <div class="section-title">
+            <div class="label">Historial</div>
+            <button class="ghost" id="clearHistoryBtn">Limpiar</button>
+          </div>
           <div class="side-list" id="history"></div>
         </section>
+
         <section class="panel">
-          <div class="label">Fuentes del agente</div>
-          <div class="sources" id="sources"><span class="note">Las fuentes aparecen después de buscar.</span></div>
+          <div class="section-title"><div class="label">Feedback de sesión</div></div>
+          <div id="feedbackSummary" class="hint">Todavía no marcaste recomendaciones.</div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title"><div class="label">Fuentes del agente</div></div>
+          <div class="sources" id="sources"><span class="hint">Las fuentes aparecen después de buscar.</span></div>
         </section>
       </aside>
     </div>
@@ -188,121 +383,264 @@ const CONTINENTS = [
   ['all', '🌐 Todo el mundo']
 ];
 const PRECISION = [
-  ['strict', 'Alta', 'descarta si no valida origen'],
+  ['strict', 'Alta', 'solo origen muy validado'],
   ['balanced', 'Media', 'recomendada'],
-  ['exploratory', 'Explorar', 'más variedad']
+  ['exploratory', 'Explorar', 'más variedad, menor certeza']
 ];
+const MODES = [
+  ['similar', 'Similar directo', 'fans también escuchan + artistas similares'],
+  ['scene', 'Explorar escena', 'amplía por escena/subgénero del artista base']
+];
+const CONTINENT_LABELS = Object.fromEntries(CONTINENTS.map(([id, label]) => [id, label.replace(/^\S+\s/, '')]));
+
 let selectedContinent = 'europe';
 let selectedPrecision = 'balanced';
+let selectedMode = 'similar';
+let lastResults = null;
+let lastSources = [];
 
 const $ = sel => document.querySelector(sel);
+const $$ = sel => [...document.querySelectorAll(sel)];
 
-function storageGet(key) {
-  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+function escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
+function safeAttr(value = '') { return escapeHtml(value); }
+function storageGet(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } }
 function storageSet(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+function downloadFile(filename, content, type = 'text/plain') {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+function tierClass(tier = '') {
+  if (tier.includes('Muy')) return '';
+  if (tier.includes('Buena')) return 'mid';
+  return 'low';
+}
+function compactDate(iso) {
+  try { return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }); } catch { return ''; }
+}
 
 function renderChoices() {
-  $('#continents').innerHTML = CONTINENTS.map(([id, label]) => `<div class="choice ${id === selectedContinent ? 'active' : ''}" data-continent="${id}">${label}</div>`).join('');
-  $('#precision').innerHTML = PRECISION.map(([id, label, sub]) => `<div class="choice ${id === selectedPrecision ? 'active' : ''}" data-precision="${id}">${label}<small>${sub}</small></div>`).join('');
+  $('#continents').innerHTML = CONTINENTS.map(([id, label]) => `<div class="choice ${id === selectedContinent ? 'active' : ''}" data-continent="${id}"><strong>${label}</strong></div>`).join('');
+  $('#precision').innerHTML = PRECISION.map(([id, label, sub]) => `<div class="choice ${id === selectedPrecision ? 'active' : ''}" data-precision="${id}"><strong>${label}</strong><small>${sub}</small></div>`).join('');
+  $('#modes').innerHTML = MODES.map(([id, label, sub]) => `<div class="choice ${id === selectedMode ? 'active' : ''}" data-mode="${id}"><strong>${label}</strong><small>${sub}</small></div>`).join('');
 
-  document.querySelectorAll('[data-continent]').forEach(el => el.onclick = () => { selectedContinent = el.dataset.continent; renderChoices(); });
-  document.querySelectorAll('[data-precision]').forEach(el => el.onclick = () => { selectedPrecision = el.dataset.precision; renderChoices(); });
+  $$('[data-continent]').forEach(el => el.onclick = () => { selectedContinent = el.dataset.continent; renderChoices(); });
+  $$('[data-precision]').forEach(el => el.onclick = () => { selectedPrecision = el.dataset.precision; renderChoices(); });
+  $$('[data-mode]').forEach(el => el.onclick = () => { selectedMode = el.dataset.mode; renderChoices(); });
 }
 
 function renderSideLists() {
   const favs = storageGet('soundmatch_favorites');
   const hist = storageGet('soundmatch_history');
-  $('#favorites').innerHTML = favs.length ? favs.map(x => `<div class="side-item"><span>${x}</span><button onclick="removeFavorite('${encodeURIComponent(x)}')">×</button></div>`).join('') : '<div class="empty">Todavía no guardaste favoritos.</div>';
-  $('#history').innerHTML = hist.length ? hist.map(x => `<div class="side-item"><span>${x.artist} · ${x.continent}</span><button onclick="repeatSearch('${encodeURIComponent(x.artist)}','${x.continent}')">usar</button></div>`).join('') : '<div class="empty">Sin búsquedas todavía.</div>';
+  $('#favorites').innerHTML = favs.length ? favs.map(x => `
+    <div class="side-item">
+      <span title="${safeAttr(x.name || x)}">${escapeHtml(x.name || x)}</span>
+      <button class="ghost" onclick="removeFavorite('${encodeURIComponent(x.name || x)}')">×</button>
+    </div>`).join('') : '<div class="status">Todavía no guardaste favoritos.</div>';
+
+  $('#history').innerHTML = hist.length ? hist.map(x => `
+    <div class="side-item">
+      <span title="${safeAttr(x.artist)}">${escapeHtml(x.artist)} · ${escapeHtml(CONTINENT_LABELS[x.continent] || x.continent)} · ${escapeHtml(compactDate(x.date))}</span>
+      <button class="ghost" onclick="repeatSearch('${encodeURIComponent(x.artist)}','${x.continent}','${x.precision || 'balanced'}','${x.mode || 'similar'}')">usar</button>
+    </div>`).join('') : '<div class="status">Sin búsquedas todavía.</div>';
+
+  renderFeedbackSummary();
 }
 
 function addFavorite(name) {
-  const favs = storageGet('soundmatch_favorites');
-  if (!favs.includes(name)) favs.unshift(name);
-  storageSet('soundmatch_favorites', favs.slice(0, 30));
+  const favs = storageGet('soundmatch_favorites').filter(x => (x.name || x) !== name);
+  favs.unshift({ name, date: new Date().toISOString() });
+  storageSet('soundmatch_favorites', favs.slice(0, 40));
   renderSideLists();
 }
 function removeFavorite(encoded) {
   const name = decodeURIComponent(encoded);
-  storageSet('soundmatch_favorites', storageGet('soundmatch_favorites').filter(x => x !== name));
+  storageSet('soundmatch_favorites', storageGet('soundmatch_favorites').filter(x => (x.name || x) !== name));
   renderSideLists();
 }
-function repeatSearch(encoded, continent) {
+function addHistory(artist, continent, precision, mode) {
+  const hist = storageGet('soundmatch_history').filter(x => !(x.artist === artist && x.continent === continent && x.mode === mode));
+  hist.unshift({ artist, continent, precision, mode, date: new Date().toISOString() });
+  storageSet('soundmatch_history', hist.slice(0, 25));
+  renderSideLists();
+}
+function repeatSearch(encoded, continent, precision, mode) {
   $('#artist').value = decodeURIComponent(encoded);
   selectedContinent = continent;
+  selectedPrecision = precision || 'balanced';
+  selectedMode = mode || 'similar';
   renderChoices();
   go();
 }
-function addHistory(artist, continent) {
-  const hist = storageGet('soundmatch_history').filter(x => !(x.artist === artist && x.continent === continent));
-  hist.unshift({ artist, continent, date: new Date().toISOString() });
-  storageSet('soundmatch_history', hist.slice(0, 20));
-  renderSideLists();
+function feedbackKey() { return 'soundmatch_feedback'; }
+function addFeedback(artist, value) {
+  const seed = $('#artist').value.trim();
+  const all = storageGet(feedbackKey()).filter(x => !(x.artist === artist && x.seed === seed));
+  all.unshift({ artist, seed, continent: selectedContinent, value, date: new Date().toISOString() });
+  storageSet(feedbackKey(), all.slice(0, 80));
+  renderFeedbackSummary();
+  const enc = encodeURIComponent(artist);
+  $(`[data-feedback-up="${CSS.escape(enc)}"]`)?.classList.toggle('active', value === 'up');
+  $(`[data-feedback-down="${CSS.escape(enc)}"]`)?.classList.toggle('active', value === 'down');
+}
+function addFavoriteDecoded(encoded) { addFavorite(decodeURIComponent(encoded)); }
+function compareArtistDecoded(encoded) { compareArtist(decodeURIComponent(encoded)); }
+function addFeedbackDecoded(encoded, value) { addFeedback(decodeURIComponent(encoded), value); }
+function getFeedbackForApi() {
+  const seed = $('#artist').value.trim();
+  return storageGet(feedbackKey()).filter(x => !seed || x.seed === seed || x.continent === selectedContinent).slice(0, 14);
+}
+function renderFeedbackSummary() {
+  const feedback = storageGet(feedbackKey());
+  const up = feedback.filter(x => x.value === 'up').length;
+  const down = feedback.filter(x => x.value === 'down').length;
+  $('#feedbackSummary').innerHTML = feedback.length
+    ? `<div class="analysis-card"><strong>${up}</strong> útiles · <strong>${down}</strong> no se parecen<br><span class="muted">El próximo pedido manda este feedback al agente para ajustar la búsqueda.</span></div>`
+    : 'Todavía no marcaste recomendaciones.';
 }
 
 function renderSources(sources) {
+  lastSources = sources || [];
   if (!sources?.length) {
-    $('#sources').innerHTML = '<span class="note">No se recibieron fuentes de grounding.</span>';
+    $('#sources').innerHTML = '<span class="hint">No se recibieron fuentes de grounding.</span>';
     return;
   }
-  $('#sources').innerHTML = sources.slice(0, 10).map(s => `<a href="${s.url}" target="_blank" title="${s.title || s.url}">${s.index}. ${s.title || s.url}</a>`).join('');
+  $('#sources').innerHTML = sources.slice(0, 12).map(s => `<a href="${safeAttr(s.url)}" target="_blank" title="${safeAttr(s.title || s.url)}">${s.index}. ${escapeHtml(s.title || s.url)}</a>`).join('');
+}
+
+function scoreBar(label, value) {
+  const pct = Math.max(0, Math.min(100, Math.round(Number(value || 0))));
+  return `<div class="meter"><div class="meter-label"><span>${label}</span><b>${pct}</b></div><div class="bar"><span style="width:${pct}%"></span></div></div>`;
+}
+
+function groupByTier(recommendations) {
+  const order = ['Muy recomendado', 'Buena coincidencia', 'Experimental'];
+  return order.map(tier => [tier, recommendations.filter(r => r.tier === tier)]).filter(([, items]) => items.length);
+}
+
+function renderSummary(data) {
+  $('#summaryPanel').classList.remove('hidden');
+  $('#summaryMeta').textContent = `${data.recommendations?.length || 0} resultados · ${data.continent_label || selectedContinent} · ${selectedMode === 'scene' ? 'Explorar escena' : 'Similar directo'}`;
+  const scene = data.detected_scene?.length ? `<div class="scene-bar">${data.detected_scene.map(x => `<span class="scene-chip">${escapeHtml(x)}</span>`).join('')}</div>` : '';
+  const rejected = data.rejected?.length ? `<details><summary>Ver descartados por filtro de continente (${data.rejected.length})</summary><div class="details-box">${data.rejected.map(x => `• ${escapeHtml(x.name)}: ${escapeHtml(x.reason)}`).join('<br>')}</div></details>` : '';
+  const notes = data.debug_notes?.length ? `<details><summary>Notas del agente</summary><div class="details-box">${data.debug_notes.map(x => `• ${escapeHtml(x)}`).join('<br>')}</div></details>` : '';
+  $('#summaryContent').innerHTML = `<div class="hint">Escena detectada / señales de búsqueda:</div>${scene || '<div class="hint">Sin escena detectada.</div>'}${rejected}${notes}`;
 }
 
 function renderResults(data) {
+  lastResults = data;
   renderSources(data.sources || []);
+  renderSummary(data);
   if (!data.recommendations?.length) {
-    $('#results').innerHTML = `<div class="empty">No encontré recomendaciones con evidencia suficiente para ese continente. Probá con precisión “Media” o “Explorar”.</div>`;
+    $('#results').innerHTML = `<div class="status">No encontré recomendaciones con evidencia suficiente para ese continente. Probá con “Media”, “Explorar” o usá “¿Por qué no aparece?” para un artista puntual.</div>`;
     return;
   }
-  $('#results').innerHTML = data.recommendations.map((r, i) => `
-    <article class="card" style="animation-delay:${i * 0.04}s">
-      <div class="num">${i + 1}</div>
+
+  const grouped = groupByTier(data.recommendations);
+  let index = 0;
+  $('#results').innerHTML = grouped.map(([tier, items]) => `
+    <section class="result-group">
+      <div class="group-title"><span>${escapeHtml(tier)}</span><span>${items.length}</span></div>
+      ${items.map(r => renderCard(r, ++index, data)).join('')}
+    </section>
+  `).join('');
+}
+
+function renderCard(r, i, data) {
+  const name = String(r.name || '');
+  const encName = encodeURIComponent(name);
+  const tier = String(r.tier || 'Experimental');
+  const evidence = Array.isArray(r.evidence) ? r.evidence : [];
+  const queries = Array.isArray(r.source_queries) ? r.source_queries : [];
+  return `
+    <article class="card" style="animation-delay:${i * 0.035}s">
+      <div class="num">${i}</div>
       <div>
-        <div class="name">${r.name}</div>
-        <div class="country">${r.country || 'origen sin mostrar'} · ${r.continent || data.continent}</div>
-        <div class="chips">${(r.sound_signal || []).slice(0, 5).map(t => `<span class="chip">${t}</span>`).join('')}</div>
-        <div class="why">${r.why || ''}</div>
-        <div class="evidence"><strong>Fans/afinidad:</strong> ${r.fan_signal || 'Sin detalle'}<br><strong>Origen:</strong> ${r.origin_signal || r.validation_note || 'Sin detalle'}</div>
+        <div class="name-line">
+          <div class="name">${escapeHtml(name)}</div>
+          <span class="tier ${tierClass(tier)}">${escapeHtml(tier)}</span>
+        </div>
+        <div class="country">${escapeHtml(r.country || 'origen no informado')} · ${escapeHtml(CONTINENT_LABELS[r.continent] || r.continent || data.continent)}</div>
+        <div class="chips">${(r.sound_signal || []).slice(0, 7).map(t => `<span class="chip">${escapeHtml(t)}</span>`).join('')}</div>
+        <div class="why">${escapeHtml(r.why || '')}</div>
+        <div class="evidence"><strong>Fans/afinidad:</strong> ${escapeHtml(r.fan_signal || 'Sin detalle')}<br><strong>Origen:</strong> ${escapeHtml(r.origin_signal || r.validation_note || 'Sin detalle')}</div>
+        <details>
+          <summary>Ver evidencia y validación</summary>
+          <div class="details-box">
+            <strong>Validación:</strong> ${escapeHtml(r.validation_note || 'Sin detalle')}<br>
+            ${r.musicbrainz?.country ? `<strong>MusicBrainz:</strong> ${escapeHtml(r.musicbrainz.matchedName || r.name)} · ${escapeHtml(r.musicbrainz.country)} · ${escapeHtml(r.musicbrainz.areaCode || '')}<br>` : ''}
+            ${evidence.length ? `<strong>Evidencia:</strong><br>${evidence.map(x => `• ${escapeHtml(x)}`).join('<br>')}<br>` : ''}
+            ${queries.length ? `<strong>Queries/fuentes usadas:</strong><br>${queries.map(x => `• ${escapeHtml(x)}`).join('<br>')}` : ''}
+            ${r.warning ? `<br><strong>Advertencia:</strong> ${escapeHtml(r.warning)}` : ''}
+          </div>
+        </details>
         <div class="links">
-          <a href="${r.links?.spotify || '#'}" target="_blank">Spotify</a>
-          <a href="${r.links?.youtube || '#'}" target="_blank">YouTube</a>
-          <a href="${r.links?.lastfm || '#'}" target="_blank">Last.fm</a>
+          <a href="${safeAttr(r.links?.spotify || '#')}" target="_blank">Spotify</a>
+          <a href="${safeAttr(r.links?.youtube || '#')}" target="_blank">YouTube</a>
+          <a href="${safeAttr(r.links?.lastfm || '#')}" target="_blank">Last.fm</a>
+        </div>
+        <div class="card-actions">
+          <button class="mini-btn" onclick="addFavoriteDecoded('${encName}')">♡ Favorito</button>
+          <button class="mini-btn" onclick="compareArtistDecoded('${encName}')">Comparar</button>
+          <button class="mini-btn good" data-feedback-up="${safeAttr(encName)}" onclick="addFeedbackDecoded('${encName}','up')">👍 Me sirve</button>
+          <button class="mini-btn bad" data-feedback-down="${safeAttr(encName)}" onclick="addFeedbackDecoded('${encName}','down')">👎 No se parece</button>
         </div>
       </div>
-      <div class="score">
-        <button class="heart" onclick="addFavorite('${String(r.name).replace(/'/g, "\\'")}')">♡</button>
-        <strong>${Math.round(r.similarity_score || 0)}</strong>
-        <span class="note">match</span>
+      <div class="score-col">
+        <div class="score-main"><strong>${Math.round(r.final_score || r.similarity_score || 0)}</strong><span>confianza</span></div>
+        ${scoreBar('Sonido', r.sound_confidence)}
+        ${scoreBar('Origen', r.origin_confidence)}
+        ${scoreBar('Fans', r.fan_overlap_confidence)}
       </div>
     </article>
-  `).join('');
+  `;
 }
 
 async function go() {
   const artist = $('#artist').value.trim();
   if (!artist) {
-    $('#results').innerHTML = '<div class="error">Ingresá una banda o artista.</div>';
+    $('#results').innerHTML = '<div class="status error">Ingresá una banda o artista.</div>';
     return;
   }
   $('#discoverBtn').disabled = true;
   $('#searchBtn').disabled = true;
   $('#discoverBtn').textContent = 'Buscando con LLM...';
-  $('#results').innerHTML = '<div class="loading">El agente está buscando artistas parecidos, validando origen y uniendo evidencia pública. Esto puede tardar unos segundos.</div>';
-  $('#sources').innerHTML = '<span class="note">Buscando fuentes...</span>';
+  $('#summaryPanel').classList.add('hidden');
+  $('#results').innerHTML = '<div class="status loading">El agente está buscando artistas parecidos, validando origen y uniendo evidencia pública<span class="dots"></span><br><span class="hint">Puede tardar unos segundos porque no usa una base propia.</span></div>';
+  $('#sources').innerHTML = '<span class="hint">Buscando fuentes...</span>';
 
   try {
     const res = await fetch('/api/recommend', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ artist, continent: selectedContinent, precision: selectedPrecision })
+      body: JSON.stringify({
+        artist,
+        continent: selectedContinent,
+        precision: selectedPrecision,
+        mode: selectedMode,
+        feedbackContext: getFeedbackForApi()
+      })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al buscar recomendaciones.');
-    addHistory(artist, selectedContinent);
+    addHistory(artist, selectedContinent, selectedPrecision, selectedMode);
     renderResults(data);
   } catch (err) {
-    $('#results').innerHTML = `<div class="error">${err.message}</div>`;
+    $('#results').innerHTML = `<div class="status error">${escapeHtml(err.message)}</div>`;
   } finally {
     $('#discoverBtn').disabled = false;
     $('#searchBtn').disabled = false;
@@ -310,9 +648,119 @@ async function go() {
   }
 }
 
+async function explainMissing() {
+  const artist = $('#artist').value.trim();
+  const missingArtist = $('#missingArtist').value.trim();
+  if (!artist || !missingArtist) {
+    $('#missingOutput').innerHTML = '<div class="status error">Completá la banda base y el artista esperado.</div>';
+    return;
+  }
+  $('#missingBtn').disabled = true;
+  $('#missingBtn').textContent = 'Analizando...';
+  $('#missingOutput').innerHTML = '<div class="status loading">Analizando ausencia<span class="dots"></span></div>';
+  try {
+    const res = await fetch('/api/explain-missing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ artist, missingArtist, continent: selectedContinent, precision: selectedPrecision })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al analizar.');
+    $('#missingOutput').innerHTML = `
+      <div class="analysis-card">
+        <strong>${escapeHtml(data.missing_artist || missingArtist)}</strong><br>
+        País/continente: ${escapeHtml(data.country || 'sin dato')} · ${escapeHtml(data.continent || 'sin dato')}<br>
+        ¿Debería aparecer?: <strong>${data.should_have_appeared ? 'Sí' : 'No necesariamente'}</strong><br>
+        Sonido: ${Math.round(data.sound_match || 0)} · Origen: ${Math.round(data.origin_confidence || 0)} · Fans: ${Math.round(data.fan_overlap_confidence || 0)}
+      </div>
+      <div class="analysis-card"><strong>Motivo probable:</strong><br>${escapeHtml(data.likely_reason_not_shown || '')}</div>
+      <div class="analysis-card"><strong>Recomendación:</strong><br>${escapeHtml(data.recommendation || '')}</div>
+      ${data.evidence?.length ? `<div class="analysis-card"><strong>Evidencia:</strong><br>${data.evidence.map(x => `• ${escapeHtml(x)}`).join('<br>')}</div>` : ''}
+    `;
+    if (data.sources?.length) renderSources(data.sources);
+  } catch (err) {
+    $('#missingOutput').innerHTML = `<div class="status error">${escapeHtml(err.message)}</div>`;
+  } finally {
+    $('#missingBtn').disabled = false;
+    $('#missingBtn').textContent = 'Analizar ausencia';
+  }
+}
+
+async function compareArtist(candidate) {
+  const artist = $('#artist').value.trim();
+  if (!artist || !candidate) return;
+  $('#compareOutput').innerHTML = '<div class="status loading">Comparando bandas<span class="dots"></span></div>';
+  try {
+    const res = await fetch('/api/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ artist, candidate, continent: selectedContinent })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al comparar.');
+    $('#compareOutput').innerHTML = `
+      <div class="analysis-card"><strong>${escapeHtml(data.seed)} vs ${escapeHtml(data.candidate)}</strong><br>${escapeHtml(data.verdict || '')}<br><br><strong>Score estimado:</strong> ${Math.round(data.score_estimate || 0)}<br><strong>Uso:</strong> ${escapeHtml(data.recommendation_use || '')}</div>
+      ${data.common_traits?.length ? `<div class="analysis-card"><strong>En común:</strong><br>${data.common_traits.map(x => `• ${escapeHtml(x)}`).join('<br>')}</div>` : ''}
+      ${data.differences?.length ? `<div class="analysis-card"><strong>Diferencias:</strong><br>${data.differences.map(x => `• ${escapeHtml(x)}`).join('<br>')}</div>` : ''}
+      <div class="analysis-card"><strong>Fans:</strong><br>${escapeHtml(data.fan_overlap || 'Sin detalle')}<br><br><strong>Origen:</strong><br>${escapeHtml(data.origin_note || 'Sin detalle')}</div>
+    `;
+    if (data.sources?.length) renderSources(data.sources);
+  } catch (err) {
+    $('#compareOutput').innerHTML = `<div class="status error">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function getPlaylistText() {
+  if (!lastResults?.recommendations?.length) return '';
+  return lastResults.recommendations.map((r, i) => `${i + 1}. ${r.name} — ${r.country || ''} (${r.tier || ''})`).join('\n');
+}
+async function copyPlaylist() {
+  const text = getPlaylistText();
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+  $('#copyPlaylistBtn').textContent = 'Copiado ✓';
+  setTimeout(() => $('#copyPlaylistBtn').textContent = 'Copiar playlist', 1400);
+}
+function exportTxt() {
+  if (!lastResults) return;
+  const text = `SoundMatch\nBase: ${lastResults.seed}\nContinente: ${lastResults.continent_label || lastResults.continent}\nModo: ${lastResults.mode}\n\n${getPlaylistText()}\n`;
+  downloadFile(`soundmatch-${lastResults.seed}.txt`, text, 'text/plain;charset=utf-8');
+}
+function exportCsv() {
+  if (!lastResults?.recommendations?.length) return;
+  const rows = [['rank','name','country','continent','tier','final_score','sound_confidence','origin_confidence','fan_overlap_confidence','why']];
+  lastResults.recommendations.forEach((r, i) => rows.push([i+1, r.name, r.country, r.continent, r.tier, r.final_score, r.sound_confidence, r.origin_confidence, r.fan_overlap_confidence, r.why]));
+  const csv = rows.map(row => row.map(cell => `"${String(cell ?? '').replaceAll('"','""')}"`).join(',')).join('\n');
+  downloadFile(`soundmatch-${lastResults.seed}.csv`, csv, 'text/csv;charset=utf-8');
+}
+function exportJson() {
+  if (!lastResults) return;
+  downloadFile(`soundmatch-${lastResults.seed}.json`, JSON.stringify(lastResults, null, 2), 'application/json;charset=utf-8');
+}
+
+async function checkHealth() {
+  try {
+    const res = await fetch('/api/health');
+    const data = await res.json();
+    alert(`Backend OK\nModelo: ${data.model}\nLast.fm: ${data.lastfm_enabled ? 'activado' : 'sin API key'}`);
+  } catch (err) {
+    alert('No pude contactar el backend.');
+  }
+}
+
 $('#discoverBtn').onclick = go;
 $('#searchBtn').onclick = go;
+$('#missingBtn').onclick = explainMissing;
+$('#copyPlaylistBtn').onclick = copyPlaylist;
+$('#exportTxtBtn').onclick = exportTxt;
+$('#exportCsvBtn').onclick = exportCsv;
+$('#exportJsonBtn').onclick = exportJson;
+$('#healthBtn').onclick = checkHealth;
+$('#clearFavsBtn').onclick = () => { storageSet('soundmatch_favorites', []); renderSideLists(); };
+$('#clearHistoryBtn').onclick = () => { storageSet('soundmatch_history', []); renderSideLists(); };
 $('#artist').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+$('#missingArtist').addEventListener('keydown', e => { if (e.key === 'Enter') explainMissing(); });
+
 renderChoices();
 renderSideLists();
 </script>

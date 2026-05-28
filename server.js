@@ -188,34 +188,51 @@ async function callGeminiJson(prompt, temperature = 0.15) {
 }
 
 function formatFeedbackContext(feedback = []) {
-  if (!Array.isArray(feedback) || !feedback.length) return 'Sin feedback previo del usuario.';
+  if (!Array.isArray(feedback) || !feedback.length) return 'Sin feedback previo relevante para esta búsqueda.';
 
-  const accepted =
-    feedback
-      .filter(x => x?.value === 'up')
-      .slice(0, 8)
-      .map(x => x.artist)
+  const sorted = [...feedback]
+    .filter(x => x?.artist)
+    .sort((a, b) => Number(b.context_weight || 0) - Number(a.context_weight || 0));
+
+  const strongMoreLike =
+    sorted
+      .filter(x => x?.value === 'more_like' && Number(x.context_weight || 0) >= 0.75)
+      .slice(0, 5)
+      .map(x => `${x.artist} (contexto: ${x.seed || 'sin seed'}, peso ${Number(x.context_weight || 0).toFixed(2)})`)
       .join(', ') || 'ninguno';
 
-  const moreLike =
-    feedback
-      .filter(x => x?.value === 'more_like')
+  const weakMoreLike =
+    sorted
+      .filter(x => x?.value === 'more_like' && Number(x.context_weight || 0) < 0.75)
+      .slice(0, 5)
+      .map(x => `${x.artist} (contexto anterior: ${x.seed || 'sin seed'}, peso bajo ${Number(x.context_weight || 0).toFixed(2)})`)
+      .join(', ') || 'ninguno';
+
+  const accepted =
+    sorted
+      .filter(x => x?.value === 'up')
       .slice(0, 8)
-      .map(x => x.artist)
+      .map(x => `${x.artist} (peso ${Number(x.context_weight || 0).toFixed(2)})`)
       .join(', ') || 'ninguno';
 
   const rejected =
-    feedback
+    sorted
       .filter(x => x?.value === 'down')
       .slice(0, 8)
-      .map(x => `${x.artist}${x.reason ? ` (${x.reason})` : ''}`)
+      .map(x => `${x.artist}${x.reason ? ` (${x.reason})` : ''} (peso ${Number(x.context_weight || 0).toFixed(2)})`)
       .join(', ') || 'ninguno';
 
-  return `Feedback local del usuario para ajustar esta sesión.
+  return `Feedback local del usuario, ya filtrado por relevancia contextual para esta búsqueda.
+- "Más como este" de peso ALTO, solo cuando corresponde al mismo artista base/contexto: ${strongMoreLike}.
+- "Más como este" histórico de peso BAJO: ${weakMoreLike}.
 - Aceptados / sirven: ${accepted}.
-- Más como este / usar como segunda referencia sonora: ${moreLike}.
 - Rechazados / no se parecen: ${rejected}.
-Reglas: acercate al perfil sonoro de aceptados y especialmente de "más como este". Evitá repetir rechazados o artistas con rasgos similares a los rechazados, salvo que haya una razón fuerte.`;
+Reglas críticas:
+1. Usá "Más como este" de peso alto como segunda referencia sonora fuerte.
+2. NO arrastres "Más como este" histórico de otra banda base como eje principal de una búsqueda nueva.
+3. Si el usuario busca una banda base distinta, el seed actual manda más que cualquier feedback histórico.
+4. Los rechazados sirven principalmente para no repetir ese artista y evitar rasgos similares si el contexto es el mismo.
+5. Si hay conflicto entre feedback histórico y la banda base actual, priorizá siempre la banda base actual + continente + prompt avanzado.`;
 }
 
 function sanitizeAdvancedInstructions(value = '') {
@@ -286,6 +303,7 @@ Reglas obligatorias:
 8. Si hay instrucciones avanzadas, separá qué es filtro duro y qué es preferencia blanda.
 9. No sacrifiques el parecido musical solo por cumplir una preferencia secundaria: el resultado ideal combina sonido parecido + continente correcto + buen ajuste al prompt.
 10. Devolvé SOLO JSON válido. Sin markdown, sin texto antes ni después.
+11. El feedback de usuario es contextual: "Más como este" solo debe pesar fuerte si el feedback indica context_weight alto o mismo seed. No dejes que un "Más como este" de una búsqueda anterior domine una búsqueda nueva con otra banda base.
 
 Interpretación de precisión:
 - strict: país/continente confirmado por evidencia fuerte. No muestres dudosos.

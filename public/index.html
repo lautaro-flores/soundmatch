@@ -497,11 +497,6 @@
         </section>
 
         <section class="panel">
-          <div class="section-title"><div class="label">Comparador A/B</div></div>
-          <div id="compareOutput" class="analysis-output"><div class="status">Tocá “Comparar” en una recomendación para ver similitudes y diferencias.</div></div>
-        </section>
-
-        <section class="panel">
           <div class="section-title">
             <div class="label">Favoritos</div>
             <button class="ghost" id="clearFavsBtn">Limpiar</button>
@@ -707,7 +702,6 @@ function moreLikeDecoded(encoded) {
   renderTemporaryNotice(`⚡ ${artist} va a pesar fuerte solo para búsquedas relacionadas con ${$('#artist').value.trim() || 'esta banda'}.`);
 }
 function addFavoriteDecoded(encoded) { addFavorite(decodeURIComponent(encoded)); }
-function compareArtistDecoded(encoded) { compareArtist(decodeURIComponent(encoded)); }
 function addFeedbackDecoded(encoded, value) { addFeedback(decodeURIComponent(encoded), value); }
 
 function feedbackContextForItem(item, currentSeedKey, currentContinent) {
@@ -887,10 +881,9 @@ function renderCard(r, i, data) {
         </div>
         <div class="card-actions">
           <button class="mini-btn" onclick="addFavoriteDecoded('${encName}')">♡ Favorito</button>
-          <button class="mini-btn" onclick="compareArtistDecoded('${encName}')">Comparar</button>
-          <button class="mini-btn good" data-feedback-more="${safeAttr(encName)}" onclick="moreLikeDecoded('${encName}')">⚡ Más como este</button>
-          <button class="mini-btn good" data-feedback-up="${safeAttr(encName)}" onclick="addFeedbackDecoded('${encName}','up')">👍 Me sirve</button>
-          <button class="mini-btn bad" data-feedback-down="${safeAttr(encName)}" onclick="addFeedbackDecoded('${encName}','down')">👎 No se parece</button>
+          <button class="mini-btn good" data-feedback-more="${safeAttr(encName)}" onclick="moreLikeDecoded('${encName}')">Más como este</button>
+          <button class="mini-btn good" data-feedback-up="${safeAttr(encName)}" onclick="addFeedbackDecoded('${encName}','up')">Messirve</button>
+          <button class="mini-btn bad" data-feedback-down="${safeAttr(encName)}" onclick="addFeedbackDecoded('${encName}','down')">No se parece</button>
         </div>
       </div>
       <div class="score-col">
@@ -979,30 +972,6 @@ async function explainMissing() {
   } finally {
     $('#missingBtn').disabled = false;
     $('#missingBtn').textContent = 'Analizar ausencia';
-  }
-}
-
-async function compareArtist(candidate) {
-  const artist = $('#artist').value.trim();
-  if (!artist || !candidate) return;
-  $('#compareOutput').innerHTML = '<div class="status loading">Comparando bandas<span class="dots"></span></div>';
-  try {
-    const res = await fetch('/api/compare', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ artist, candidate, continent: selectedContinent, advancedInstructions: getAdvancedInstructions() })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al comparar.');
-    $('#compareOutput').innerHTML = `
-      <div class="analysis-card"><strong>${escapeHtml(data.seed)} vs ${escapeHtml(data.candidate)}</strong><br>${escapeHtml(data.verdict || '')}<br><br><strong>Score estimado:</strong> ${Math.round(data.score_estimate || 0)}<br><strong>Uso:</strong> ${escapeHtml(data.recommendation_use || '')}</div>
-      ${data.common_traits?.length ? `<div class="analysis-card"><strong>En común:</strong><br>${data.common_traits.map(x => `• ${escapeHtml(x)}`).join('<br>')}</div>` : ''}
-      ${data.differences?.length ? `<div class="analysis-card"><strong>Diferencias:</strong><br>${data.differences.map(x => `• ${escapeHtml(x)}`).join('<br>')}</div>` : ''}
-      <div class="analysis-card"><strong>Fans:</strong><br>${escapeHtml(data.fan_overlap || 'Sin detalle')}<br><br><strong>Origen:</strong><br>${escapeHtml(data.origin_note || 'Sin detalle')}</div>
-    `;
-    if (data.sources?.length) renderSources(data.sources);
-  } catch (err) {
-    $('#compareOutput').innerHTML = `<div class="status error">${escapeHtml(err.message)}</div>`;
   }
 }
 

@@ -600,60 +600,6 @@ Devolvé SOLO JSON válido:
   }
 });
 
-app.post('/api/compare', async (req, res) => {
-  try {
-    const seed = String(req.body.artist || '').trim();
-    const candidate = String(req.body.candidate || '').trim();
-    const continent = String(req.body.continent || 'all').trim();
-    const advancedInstructions = sanitizeAdvancedInstructions(req.body.advancedInstructions || '');
-
-    if (!seed || !candidate) return res.status(400).json({ error: 'Faltan artista base o candidato.' });
-
-    const [seedInfo, candidateInfo, mb] = await Promise.all([
-      getLastFmInfo(seed),
-      getLastFmInfo(candidate),
-      validateWithMusicBrainz(candidate)
-    ]);
-
-    const prompt = `
-Compará musicalmente a "${seed}" con "${candidate}" para una app de recomendación.
-El usuario filtró por continente: ${toDisplayContinent(continent)} (${continent}).
-${formatAdvancedInstructions(advancedInstructions)}
-
-Analizá con búsqueda web y metadata pública:
-- rasgos sonoros en común
-- diferencias
-- señales de fans/escucha cruzada o listas de similares
-- origen del candidato
-- si realmente vale la pena recomendarlo
-
-Last.fm ${seed}: ${seedInfo ? JSON.stringify(seedInfo, null, 2) : 'Sin datos'}
-Last.fm ${candidate}: ${candidateInfo ? JSON.stringify(candidateInfo, null, 2) : 'Sin datos'}
-MusicBrainz ${candidate}: ${mb ? JSON.stringify(mb, null, 2) : 'Sin datos'}
-
-Devolvé SOLO JSON válido:
-{
-  "seed": "${seed}",
-  "candidate": "${candidate}",
-  "verdict": "frase breve",
-  "score_estimate": 0,
-  "common_traits": ["rasgo 1", "rasgo 2"],
-  "differences": ["diferencia 1", "diferencia 2"],
-  "fan_overlap": "evidencia breve",
-  "origin_note": "origen/continente",
-  "recommendation_use": "Muy recomendado / Buena coincidencia / Experimental / No recomendado",
-  "evidence": ["evidencia 1", "evidencia 2"]
-}
-`;
-
-    const llm = await callGeminiJson(prompt, 0.12);
-    res.json({ ...llm.parsed, musicbrainz: mb, sources: llm.sources });
-  } catch (error) {
-    console.error('Error en compare:', error);
-    res.status(500).json({ error: error.message || 'Error inesperado.' });
-  }
-});
-
 app.listen(PORT, () => {
   console.log(`No es solo rock and roll listo en http://localhost:${PORT}`);
 });
